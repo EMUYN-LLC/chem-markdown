@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chem-markdown マニュアル</title>
+
+    <!-- SmilesDrawer (構造式の例のため) -->
+    <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
+    <!-- chem-markdown library -->
+    <script src="../dist/chem-markdown.js"></script>
+
+    <style>
+      :root {
+        --bg: #ffffff;
+        --bg-soft: #f5f6f8;
+        --text: #1f2328;
+        --muted: #59636e;
+        --border: #d8dee4;
+        --accent: #0b6bcb;
+        --code-bg: #f0f2f5;
+        --note-bg: #fff8e1;
+        --note-border: #e0b400;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #15181c;
+          --bg-soft: #1d2126;
+          --text: #e6e8eb;
+          --muted: #9aa4af;
+          --border: #343a42;
+          --accent: #58a6ff;
+          --code-bg: #232830;
+          --note-bg: #2a2614;
+          --note-border: #9c7f00;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+        line-height: 1.75;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      nav.toc {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 24px 12px 24px 16px;
+        border-right: 1px solid var(--border);
+        font-size: 14px;
+      }
+      nav.toc a {
+        display: block;
+        color: var(--muted);
+        text-decoration: none;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      nav.toc a:hover {
+        color: var(--accent);
+        background: var(--bg-soft);
+      }
+      nav.toc a.sub {
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      main {
+        padding: 24px 32px 80px;
+        min-width: 0;
+      }
+      h1 {
+        font-size: 2em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        margin-top: 56px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--border);
+      }
+      h3 {
+        margin-top: 32px;
+      }
+      a {
+        color: var(--accent);
+      }
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+        font-size: 0.9em;
+      }
+      code {
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre.code {
+        background: var(--code-bg);
+        padding: 12px 14px;
+        border-radius: 8px;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      pre.code code {
+        background: none;
+        padding: 0;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+        font-size: 15px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        background: var(--bg-soft);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      td.render {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 1.3em;
+        white-space: nowrap;
+      }
+      td.text {
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      td.input code {
+        white-space: pre;
+      }
+      .note {
+        background: var(--note-bg);
+        border-left: 4px solid var(--note-border);
+        padding: 10px 14px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+      .demo {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 4px 16px;
+        margin: 12px 0;
+      }
+      .chem-formula,
+      .chem-pu {
+        font-family: "Times New Roman", Times, serif;
+      }
+      .chem-block {
+        margin: 8px 0;
+      }
+      .chem-line {
+        font-size: 1.25em;
+        margin: 2px 0;
+      }
+      .chem-inline .chem-structure {
+        vertical-align: middle;
+      }
+      .lang {
+        margin: 0 0 4px;
+        font-size: 14px;
+      }
+      .lead {
+        color: var(--muted);
+        margin-top: 0;
+      }
+      @media (max-width: 860px) {
+        .layout {
+          display: block;
+        }
+        nav.toc {
+          position: static;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+          padding: 16px;
+        }
+        main {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <nav class="toc" aria-label="目次">
+        <strong>目次</strong>
+        <a href="#intro">1. chem-markdown とは</a>
+        <a href="#install">2. 導入</a>
+        <a href="#quick">3. クイックスタート</a>
+        <a href="#rules">4. 記法の基本ルール</a>
+        <a href="#formula">5. 化学式</a>
+        <a class="sub" href="#formula-basic">元素と下付き</a>
+        <a class="sub" href="#charge">電荷</a>
+        <a class="sub" href="#coef">係数</a>
+        <a class="sub" href="#isotope">同位体</a>
+        <a class="sub" href="#oxidation">酸化数</a>
+        <a class="sub" href="#bracket">括弧・錯イオン</a>
+        <a class="sub" href="#hydrate">水和物</a>
+        <a class="sub" href="#state">状態記号</a>
+        <a class="sub" href="#bond">結合</a>
+        <a class="sub" href="#radical">ラジカル・励起状態</a>
+        <a href="#reaction">6. 反応式</a>
+        <a class="sub" href="#arrow">矢印</a>
+        <a class="sub" href="#arrow-label">矢印の条件</a>
+        <a class="sub" href="#operator">演算子</a>
+        <a class="sub" href="#gas">沈殿・気体</a>
+        <a href="#advanced">7. 発展的な記法</a>
+        <a class="sub" href="#greek">ギリシャ文字</a>
+        <a class="sub" href="#italic">変数・斜体</a>
+        <a class="sub" href="#upright">そのまま表示する文字</a>
+        <a class="sub" href="#math">数式 ($...$)</a>
+        <a class="sub" href="#kv">Kröger-Vink 記法</a>
+        <a class="sub" href="#misc">その他</a>
+        <a href="#units">8. 単位 (\pu)</a>
+        <a href="#api">9. JavaScript API</a>
+        <a href="#auto">10. 自動変換</a>
+        <a class="sub" href="#auto-html">HTML に書く</a>
+        <a class="sub" href="#auto-md">Markdown に書く</a>
+        <a class="sub" href="#auto-smiles">構造式 (SMILES)</a>
+        <a class="sub" href="#auto-config">設定と手動実行</a>
+        <a href="#style">11. 見た目の調整 (CSS)</a>
+        <a href="#outputs">12. テキスト・LaTeX 出力</a>
+        <a href="#limits">13. 制約</a>
+        <a href="#faq">14. よくある質問</a>
+        <a href="#license">15. ライセンス</a>
+      </nav>
+
+      <main>
+        <h1>chem-markdown マニュアル</h1>
+        <p class="lang"><a href="manual.html">English</a> | 日本語</p>
+        <p class="lead">バージョン <span id="version"></span> ・ このページの表示例は、すべて chem-markdown 自身がその場で描いています。</p>
+
+        <!-- ==================================================== -->
+        <h2 id="intro">1. chem-markdown とは</h2>
+        <p>
+          chem-markdown は、化学式・反応式・単位を簡単な文字列で書き、Web ページに表示するための JavaScript ライブラリです。
+          記法は MathJax・KaTeX の化学拡張 <a href="https://mhchem.github.io/MathJax-mhchem/">mhchem</a> の
+          <code>\ce{...}</code>・<code>\pu{...}</code> と同じなので、mhchem で書いた式をそのまま使えます。
+        </p>
+        <ul>
+          <li><strong>MathJax 不要</strong>: <code>&lt;script&gt;</code> タグ 1 つで動きます。ファイルは 1 つで、外部ファイルの読み込みもありません。</li>
+          <li><strong>3 種類の出力</strong>: HTML (ページに表示)、Unicode テキスト (H₂O のような文字列)、LaTeX (mhchem と同じ)。</li>
+          <li><strong>mermaid 風の自動変換</strong>: <code>&lt;pre class="chem"&gt;</code> や Markdown の <code>```chem</code> に書くだけで、ページ読み込み時に変換されます。</li>
+          <li><strong>構造式</strong>: SmilesDrawer を読み込めば、SMILES で構造式も描けます。</li>
+        </ul>
+        <p>
+          式の解析には、mhchem 作者による公式パーサ <a href="https://github.com/mhchem/mhchemParser">mhchemParser</a> を同梱しています。
+          そのため、空白の扱いなどの細かい規則も含めて、式の解釈は mhchem と同じになります。
+        </p>
+
+        <!-- ==================================================== -->
+        <h2 id="install">2. 導入</h2>
+        <h3>CDN (jsDelivr) から読み込む</h3>
+        <pre class="code"><code>&lt;script src="https://cdn.jsdelivr.net/gh/EMUYN-LLC/chem-markdown@v1.0.0/dist/chem-markdown.js"&gt;&lt;/script&gt;</code></pre>
+        <div class="note">
+          URL の <code>@v1.0.0</code> はリリースのタグです。使うバージョンを固定するため、タグを指定してください。
+        </div>
+        <h3>ファイルを直接置く</h3>
+        <p>リポジトリの <code>dist/chem-markdown.js</code> を自分のサイトにコピーして読み込みます。</p>
+        <pre class="code"><code>&lt;script src="chem-markdown.js"&gt;&lt;/script&gt;</code></pre>
+        <p>読み込むと、グローバル変数 <code>ChemMarkdown</code> が使えるようになります。Node.js では <code>require('./chem-markdown.js')</code> で同じオブジェクトが得られます (HTML・テキスト・LaTeX への変換関数が使えます)。</p>
+
+        <!-- ==================================================== -->
+        <h2 id="quick">3. クイックスタート</h2>
+        <p>いちばん簡単なのは、HTML に <code>&lt;pre class="chem"&gt;</code> で式を書く方法です。JavaScript を書く必要はありません。</p>
+        <pre class="code"><code>&lt;script src="chem-markdown.js"&gt;&lt;/script&gt;
+
+&lt;pre class="chem"&gt;
+2H2 + O2 -&gt; 2H2O
+N2 + 3H2 &lt;=&gt; 2NH3
+&lt;/pre&gt;
+
+&lt;p&gt;水 &lt;span class="chem"&gt;H2O&lt;/span&gt; の生成熱は &lt;span class="pu"&gt;-286 kJ/mol&lt;/span&gt; です。&lt;/p&gt;</code></pre>
+        <p>表示結果:</p>
+        <div class="demo">
+          <pre class="chem">
+2H2 + O2 -&gt; 2H2O
+N2 + 3H2 &lt;=&gt; 2NH3
+</pre>
+          <p>水 <span class="chem">H2O</span> の生成熱は <span class="pu">-286 kJ/mol</span> です。</p>
+        </div>
+        <p>JavaScript から文字列として変換することもできます。</p>
+        <pre class="code"><code>ChemMarkdown.toHtml('H2SO4');   // HTML 文字列
+ChemMarkdown.toText('H2SO4');   // "H₂SO₄"
+ChemMarkdown.toLatex('H2SO4');  // mhchem と同じ LaTeX</code></pre>
+
+        <!-- ==================================================== -->
+        <h2 id="rules">4. 記法の基本ルール</h2>
+        <p>mhchem の記法は「書いたとおりに化学っぽく表示する」ように作られていますが、いくつか覚えておくべき規則があります。</p>
+        <ul>
+          <li><strong>空白に意味がある</strong>: <code>A + B</code> (前後に空白) は足し算、<code>H+</code> (空白なし) は電荷です。<code>A - B</code> は引き算、<code>A-B</code> は単結合です。</li>
+          <li><strong>末尾の <code>+</code>・<code>-</code> は電荷</strong>: <code>Cl-</code> は Cl⁻ です。ハイフンとして表示したいときは <code>{-}</code> と書きます。</li>
+          <li><strong>数字の位置で意味が変わる</strong>: 化学式の前の数字は係数、元素や括弧の後の数字は下付きになります。</li>
+          <li><strong><code>{ }</code> は囲んだ部分をそのまま表示する</strong>: <code>{Gluconic Acid}</code> のように書くと、中身を化学式として解釈しません。</li>
+          <li><strong><code>$ $</code> の中は数式</strong>: 斜体の変数や分数などを書けます。</li>
+        </ul>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="H+"><td colspan="3"></td><td>空白なし: 電荷</td></tr>
+              <tr data-ex="H + Cl"><td colspan="3"></td><td>空白あり: 足し算</td></tr>
+              <tr data-ex="A-B"><td colspan="3"></td><td>空白なし: 単結合</td></tr>
+              <tr data-ex="A - B"><td colspan="3"></td><td>空白あり: 引き算</td></tr>
+              <tr data-ex="Cl-"><td colspan="3"></td><td>末尾の - は電荷</td></tr>
+              <tr data-ex="{Gluconic Acid} + H2O2"><td colspan="3"></td><td>{ } の中はそのまま</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="formula">5. 化学式</h2>
+
+        <h3 id="formula-basic">元素と下付き</h3>
+        <p>元素記号の後の数字は自動で下付きになります。<code>_</code> で明示することもできます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="H2O"><td colspan="3"></td><td>水</td></tr>
+              <tr data-ex="Sb2O3"><td colspan="3"></td><td>2 文字の元素記号</td></tr>
+              <tr data-ex="C6H12O6"><td colspan="3"></td><td>2 桁の下付き</td></tr>
+              <tr data-ex="CH3COOH"><td colspan="3"></td><td>示性式</td></tr>
+              <tr data-ex="(CH3)3COH"><td colspan="3"></td><td>括弧の後の下付き</td></tr>
+              <tr data-ex="NO_x"><td colspan="3"></td><td>_ で下付き (文字の場合は斜体)</td></tr>
+              <tr data-ex="X_{{red}}"><td colspan="3"></td><td>下付きに文字列 ({ } で囲むと立体)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="charge">電荷</h3>
+        <p>末尾の <code>+</code>・<code>-</code> は電荷になります。<code>^</code> を付けても同じです。価数は数字を前に書きます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="H+"><td colspan="3"></td><td>1 価の陽イオン</td></tr>
+              <tr data-ex="Cl-"><td colspan="3"></td><td>1 価の陰イオン</td></tr>
+              <tr data-ex="Ca^2+"><td colspan="3"></td><td>2 価 (^ 付き)</td></tr>
+              <tr data-ex="CrO4^2-"><td colspan="3"></td><td>下付きの後の電荷</td></tr>
+              <tr data-ex="NH4+"><td colspan="3"></td><td>多原子イオン</td></tr>
+              <tr data-ex="Y^{99+}"><td colspan="3"></td><td>{ } で囲んでもよい</td></tr>
+              <tr data-ex="Fe^n+"><td colspan="3"></td><td>文字の価数 (斜体)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="coef">係数</h3>
+        <p>化学式の前の数字は係数になります。係数と化学式の間の空白はあってもなくても同じです。<code>1/2</code> は分数で表示されます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="2H2O"><td colspan="3"></td><td>整数</td></tr>
+              <tr data-ex="2 H2O"><td colspan="3"></td><td>空白があっても同じ</td></tr>
+              <tr data-ex="0.5 H2O"><td colspan="3"></td><td>小数</td></tr>
+              <tr data-ex="1/2 H2O"><td colspan="3"></td><td>分数</td></tr>
+              <tr data-ex="(1/2) H2O"><td colspan="3"></td><td>括弧付きは分数にしない</td></tr>
+              <tr data-ex="$n$ H2O"><td colspan="3"></td><td>文字の係数 (数式として書く)</td></tr>
+              <tr data-ex="x H2O"><td colspan="3"></td><td>1 文字なら $ $ なしでも斜体</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="isotope">同位体</h3>
+        <p>左上に質量数、左下に原子番号を書きます。<code>^{質量数}_{原子番号}元素</code> の順です。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="^{14}_{6}C"><td colspan="3"></td><td>炭素 14</td></tr>
+              <tr data-ex="^{227}_{90}Th+"><td colspan="3"></td><td>電荷付き</td></tr>
+              <tr data-ex="^227_90Th+"><td colspan="3"></td><td>{ } は省略できる</td></tr>
+              <tr data-ex="^{0}_{-1}n^{-}"><td colspan="3"></td><td>負の原子番号</td></tr>
+              <tr data-ex="^{235}_{92}U + ^{1}_{0}n -> ^{141}_{56}Ba + ^{92}_{36}Kr + 3^{1}_{0}n"><td colspan="3"></td><td>核反応</td></tr>
+              <tr data-ex="H{}^3HO"><td colspan="3"></td><td>{} で区切ると次の元素の左上になる</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="oxidation">酸化数</h3>
+        <p>ローマ数字を <code>^{ }</code> で書くと、元素の右上に酸化数として表示されます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="Fe^{II}"><td colspan="3"></td><td>酸化数 +2 の鉄</td></tr>
+              <tr data-ex="Fe^{II}Fe^{III}2O4"><td colspan="3"></td><td>四酸化三鉄</td></tr>
+              <tr data-ex="[Hg^{II}I4]^2-"><td colspan="3"></td><td>錯イオン中の酸化数</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="bracket">括弧・錯イオン</h3>
+        <p><code>( )</code> と <code>[ ]</code> はそのまま括弧として表示され、後ろの数字は下付き、<code>+</code>・<code>-</code> は電荷になります。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="Ca(OH)2"><td colspan="3"></td><td>丸括弧</td></tr>
+              <tr data-ex="(NH4)2S"><td colspan="3"></td><td>括弧の後の下付き</td></tr>
+              <tr data-ex="[AgCl2]-"><td colspan="3"></td><td>角括弧と電荷</td></tr>
+              <tr data-ex="[Cu(NH3)4]^2+"><td colspan="3"></td><td>錯イオン</td></tr>
+              <tr data-ex="K4[Fe(CN)6]"><td colspan="3"></td><td>錯塩</td></tr>
+              <tr data-ex="[Pt(\eta^2-C2H4)Cl3]-"><td colspan="3"></td><td>ハプト数を含む錯体</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="hydrate">水和物・付加化合物</h3>
+        <p><code>*</code> または <code>.</code> で「·」になります。前後の空白はあってもなくても同じです。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="CuSO4*5H2O"><td colspan="3"></td><td>* を使う</td></tr>
+              <tr data-ex="CuSO4.5H2O"><td colspan="3"></td><td>. を使う</td></tr>
+              <tr data-ex="KCr(SO4)2 * 12 H2O"><td colspan="3"></td><td>空白を入れてもよい</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="state">状態記号・結晶系</h3>
+        <p>化学式の直後に <code>(s)</code>・<code>(l)</code>・<code>(g)</code>・<code>(aq)</code> を書きます。<code>_{ }</code> で囲むと下付きの状態記号になります。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="H2O(l)"><td colspan="3"></td><td>液体</td></tr>
+              <tr data-ex="NaCl(s)"><td colspan="3"></td><td>固体</td></tr>
+              <tr data-ex="H2(g)"><td colspan="3"></td><td>気体</td></tr>
+              <tr data-ex="H2(aq)"><td colspan="3"></td><td>水溶液</td></tr>
+              <tr data-ex="CO3^2-_{(aq)}"><td colspan="3"></td><td>下付きの状態記号</td></tr>
+              <tr data-ex="NaOH(aq,$\infty$)"><td colspan="3"></td><td>無限希釈</td></tr>
+              <tr data-ex="ZnS($c$)"><td colspan="3"></td><td>結晶系 (斜体)</td></tr>
+              <tr data-ex="CuS($hP12$)"><td colspan="3"></td><td>Pearson 記号</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="bond">結合</h3>
+        <p>化学式の中の <code>-</code>・<code>=</code>・<code>#</code> は単結合・二重結合・三重結合になります。特殊な結合は <code>\bond{種類}</code> で書きます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="C6H5-CHO"><td colspan="3"></td><td>単結合</td></tr>
+              <tr data-ex="CH2=CH2"><td colspan="3"></td><td>二重結合</td></tr>
+              <tr data-ex="CH#CH"><td colspan="3"></td><td>三重結合</td></tr>
+              <tr data-ex="A\bond{1}B\bond{2}C\bond{3}D"><td colspan="3"></td><td>\bond{1}〜{3} でも書ける</td></tr>
+              <tr data-ex="A\bond{~}B"><td colspan="3"></td><td>点線 (部分結合)</td></tr>
+              <tr data-ex="A\bond{~-}B"><td colspan="3"></td><td>点線 + 実線 (結合次数 1.5)</td></tr>
+              <tr data-ex="A\bond{~=}B"><td colspan="3"></td><td>点線 + 実線 2 本 (\bond{~--} も同じ)</td></tr>
+              <tr data-ex="A\bond{-~-}B"><td colspan="3"></td><td>実線・点線・実線</td></tr>
+              <tr data-ex="A\bond{...}B\bond{....}C"><td colspan="3"></td><td>点 3 つ・4 つ</td></tr>
+              <tr data-ex="A\bond{->}B\bond{<-}C"><td colspan="3"></td><td>配位結合 (矢印)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          高分子の繰り返し単位を <code>[-CH2-CH2-]_n</code> と書くと、末尾の <code>-</code> が電荷として扱われます (MathJax の mhchem でも同じです)。結合として表示するには <code>[-CH2-CH2{-}]_n</code> のように <code>{-}</code> を使います。
+        </div>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="[-CH2-CH2-]_n"><td colspan="3"></td><td>末尾の - が電荷になる</td></tr>
+              <tr data-ex="[-CH2-CH2{-}]_n"><td colspan="3"></td><td>{-} でハイフンにする</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="radical">ラジカル・励起状態</h3>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="CH3^{.}"><td colspan="3"></td><td>ラジカル (^{.})</td></tr>
+              <tr data-ex="OCO^{.-}"><td colspan="3"></td><td>ラジカルアニオン</td></tr>
+              <tr data-ex="NO^{(2).-}"><td colspan="3"></td><td>不対電子の数</td></tr>
+              <tr data-ex="NO^*"><td colspan="3"></td><td>励起状態</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="reaction">6. 反応式</h2>
+        <p>化学式を演算子 (<code>+</code> など) と矢印でつないで反応式を書きます。演算子と矢印の前後には空白を入れます。</p>
+
+        <h3 id="arrow">矢印</h3>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="A -> B"><td colspan="3"></td><td>反応</td></tr>
+              <tr data-ex="A <- B"><td colspan="3"></td><td>逆向き</td></tr>
+              <tr data-ex="A <-> B"><td colspan="3"></td><td>共鳴</td></tr>
+              <tr data-ex="A <--> B"><td colspan="3"></td><td>両方向</td></tr>
+              <tr data-ex="A <=> B"><td colspan="3"></td><td>平衡</td></tr>
+              <tr data-ex="A <=>> B"><td colspan="3"></td><td>右に偏った平衡</td></tr>
+              <tr data-ex="A <<=> B"><td colspan="3"></td><td>左に偏った平衡</td></tr>
+              <tr data-ex="A → B"><td colspan="3"></td><td>Unicode の矢印も使える (→ ⟶ ⇌)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="arrow-label">矢印の条件</h3>
+        <p>矢印の直後の <code>[ ]</code> が矢印の上、2 つ目の <code>[ ]</code> が矢印の下の条件になります。中身は化学式として解釈されます。文章は <code>{ }</code>、数式は <code>$ $</code> で囲みます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="A ->[H2O] B"><td colspan="3"></td><td>上だけ</td></tr>
+              <tr data-ex="A ->[{text above}][{text below}] B"><td colspan="3"></td><td>上下に文章</td></tr>
+              <tr data-ex="A ->[$x$][$x_i$] B"><td colspan="3"></td><td>数式</td></tr>
+              <tr data-ex="2KClO3 ->[MnO2][\Delta] 2KCl + 3O2 ^"><td colspan="3"></td><td>触媒と加熱</td></tr>
+              <tr data-ex="N2 + 3H2 <=>[{Fe 触媒}][{高温・高圧}] 2NH3"><td colspan="3"></td><td>平衡矢印にも付けられる</td></tr>
+              <tr data-ex="Hg^2+ ->[I-] HgI2 ->[I-] [Hg^{II}I4]^2-"><td colspan="3"></td><td>多段階の反応</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="operator">演算子</h3>
+        <p>前後に空白を入れた <code>+</code>・<code>-</code>・<code>=</code>・<code>\pm</code> は演算子になります。<code>,</code>・<code>;</code> で式を並べることもできます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="A + B"><td colspan="3"></td><td>足し算</td></tr>
+              <tr data-ex="A - B"><td colspan="3"></td><td>引き算</td></tr>
+              <tr data-ex="A = B"><td colspan="3"></td><td>等号</td></tr>
+              <tr data-ex="A \pm B"><td colspan="3"></td><td>±</td></tr>
+              <tr data-ex="A, B, C; F"><td colspan="3"></td><td>列挙</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="gas">沈殿・気体</h3>
+        <p>前に空白を入れた <code>v</code> は沈殿 (↓)、<code>^</code> は気体 (↑) になります。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="Ba^2+ + SO4^2- -> BaSO4 v"><td colspan="3"></td><td>沈殿</td></tr>
+              <tr data-ex="Zn + 2HCl -> ZnCl2 + H2 ^"><td colspan="3"></td><td>気体の発生</td></tr>
+              <tr data-ex="x Na(NH4)HPO4 ->[\Delta] (NaPO3)_x + x NH3 ^ + x H2O"><td colspan="3"></td><td>複雑な例</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>長い反応式は、<code>+</code> や矢印の直後でだけ改行されます。「係数・化学式・↓↑」のひとまとまりの途中では改行しません。</p>
+
+        <!-- ==================================================== -->
+        <h2 id="advanced">7. 発展的な記法</h2>
+
+        <h3 id="greek">ギリシャ文字</h3>
+        <p><code>\alpha</code> のように TeX の名前で書きます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="\mu-Cl"><td colspan="3"></td><td>架橋配位子</td></tr>
+              <tr data-ex="^40_18Ar + \gamma{} + \nu_e"><td colspan="3"></td><td>γ線とニュートリノ</td></tr>
+              <tr data-ex="\beta +"><td colspan="3"></td><td>β⁺</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="italic">変数・斜体</h3>
+        <p><code>$ $</code> で囲んだ部分は数式 (斜体) になります。<code>cis</code> などの接頭辞にも使えます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="$cis${-}[PtCl2(NH3)2]"><td colspan="3"></td><td>接頭辞 (ハイフンは {-})</td></tr>
+              <tr data-ex="n-Pr"><td colspan="3"></td><td>n-プロピル</td></tr>
+              <tr data-ex="X_{$i$}^{$x$}"><td colspan="3"></td><td>添字に変数</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="upright">そのまま表示する文字</h3>
+        <p><code>{ }</code> で囲むと、中身を化学式として解釈せず、立体の文字としてそのまま表示します。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="{Gluconic Acid} + H2O2"><td colspan="3"></td><td>名前を書く</td></tr>
+              <tr data-ex="{(+)}_589{-}[Co(en)3]Cl3"><td colspan="3"></td><td>旋光度の表記</td></tr>
+              <tr data-ex="{and others}"><td colspan="3"></td><td>文章</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="math">数式 ($...$)</h3>
+        <p><code>$ $</code> の中には TeX の数式を書けます。数式の中で <code>\ce{...}</code> を使うと、また化学式に戻れます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="$K = \frac{[\ce{Hg^2+}][\ce{Hg}]}{[\ce{Hg2^2+}]}$"><td colspan="3"></td><td>平衡定数</td></tr>
+              <tr data-ex="Fe(CN)_{$\frac{6}{2}$}"><td colspan="3"></td><td>分数の下付き</td></tr>
+              <tr data-ex="Hg^2+ ->[I-] $\underset{\mathrm{red}}{\ce{HgI2}}$"><td colspan="3"></td><td>化学式の下に注記</td></tr>
+              <tr data-ex="CH4 + 2 $\left( \ce{O2 + 79/21 N2} \right)$"><td colspan="3"></td><td>括弧でくくる</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          HTML・テキスト出力で描ける TeX には範囲があります。詳しくは <a href="#limits">13. 制約</a> を参照してください。
+        </div>
+
+        <h3 id="kv">Kröger-Vink 記法</h3>
+        <p>結晶の欠陥を表す記法です。<code>x</code> (中性)、<code>.</code> (正)、<code>'</code> (負) を上付き、位置を下付きに書きます。</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="Li^x_{Li,1-2x}Mg^._{Li,x}$V$'_{Li,x}Cl^x_{Cl}"><td colspan="3"></td><td>複合的な例</td></tr>
+              <tr data-ex="O''_{i,x}"><td colspan="3"></td><td>格子間の酸素</td></tr>
+              <tr data-ex="M^{..}_i"><td colspan="3"></td><td>2 価の正の欠陥</td></tr>
+              <tr data-ex="$V$^{4'}_{Ti}"><td colspan="3"></td><td>空孔</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="misc">その他</h3>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="1s^2-N"><td colspan="3"></td><td>電子軌道</td></tr>
+              <tr data-ex="iPr"><td colspan="3"></td><td>イソプロピル</td></tr>
+              <tr data-ex="\ca Fe"><td colspan="3"></td><td>約 (circa)</td></tr>
+              <tr data-ex="\color{red}{CH3}COOH"><td colspan="3"></td><td>色を付ける</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="units">8. 単位 (\pu)</h2>
+        <p>
+          mhchem の <code>\pu</code> と同じ記法で、数値と単位を書けます。JavaScript では <code>{ type: 'pu' }</code> を指定し、自動変換ではクラス <code>pu</code> を使います。
+        </p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>入力</th><th>表示</th><th>テキスト出力</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr data-ex="123 kJ" data-type="pu"><td colspan="3"></td><td>数値と単位</td></tr>
+              <tr data-ex="123 mm2" data-type="pu"><td colspan="3"></td><td>単位の後の数字は指数</td></tr>
+              <tr data-ex="123 J s" data-type="pu"><td colspan="3"></td><td>単位の積 (空白)</td></tr>
+              <tr data-ex="123 J*s" data-type="pu"><td colspan="3"></td><td>単位の積 (·)</td></tr>
+              <tr data-ex="123 kJ/mol" data-type="pu"><td colspan="3"></td><td>単位の商 (/)</td></tr>
+              <tr data-ex="123 kJ//mol" data-type="pu"><td colspan="3"></td><td>単位の商 (分数で表示)</td></tr>
+              <tr data-ex="8.314 J K-1 mol-1" data-type="pu"><td colspan="3"></td><td>負の指数</td></tr>
+              <tr data-ex="1.2e3 kJ" data-type="pu"><td colspan="3"></td><td>指数表記 (e は ·)</td></tr>
+              <tr data-ex="1.2E3 kJ" data-type="pu"><td colspan="3"></td><td>指数表記 (E は ×)</td></tr>
+              <tr data-ex="6.02e23 mol-1" data-type="pu"><td colspan="3"></td><td>アボガドロ定数</td></tr>
+              <tr data-ex="1,2e3 kJ" data-type="pu"><td colspan="3"></td><td>小数点にカンマ</td></tr>
+              <tr data-ex="12 345.678 9 kJ" data-type="pu"><td colspan="3"></td><td>桁区切りの空白</td></tr>
+              <tr data-ex="-273.15 \degree C" data-type="pu"><td colspan="3"></td><td>温度 (\degree)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="api">9. JavaScript API</h2>
+        <p>すべての関数は <code>ChemMarkdown</code> オブジェクトにあります。<code>options.type</code> は <code>'ce'</code> (化学式・反応式、デフォルト) または <code>'pu'</code> (単位) です。</p>
+
+        <h3><code>toHtml(input, options?)</code></h3>
+        <p>HTML 文字列を返します。<code>options.prefix</code> で CSS クラス名のプレフィックス (デフォルト <code>'chem'</code>) を変えられます。ブラウザで呼ぶと、標準 CSS がページに 1 回だけ入ります。</p>
+        <pre class="code"><code>ChemMarkdown.toHtml('H2O');
+// '&lt;span class="chem-formula"&gt;&lt;span class="chem-term"&gt;H&lt;sub class="chem-sub"&gt;2&lt;/sub&gt;O&lt;/span&gt;&lt;/span&gt;'
+
+ChemMarkdown.toHtml('123 kJ/mol', { type: 'pu' });
+ChemMarkdown.toHtml('H2O', { prefix: 'my' });  // class="my-formula" ...
+
+document.getElementById('out').innerHTML = ChemMarkdown.toHtml('2H2 + O2 -&gt; 2H2O');</code></pre>
+
+        <h3><code>toText(input, options?)</code></h3>
+        <p>Unicode の上付き・下付き文字を使ったテキストを返します。<code>title</code> 属性、ボタン、通知など、HTML を使えない場所に向いています。</p>
+        <pre class="code"><code>ChemMarkdown.toText('SO4^2-');                          // "SO₄²⁻"
+ChemMarkdown.toText('N2 + 3H2 &lt;=&gt; 2NH3');                // "N₂ + 3 H₂ ⇌ 2 NH₃"
+ChemMarkdown.toText('8.314 J K-1 mol-1', { type: 'pu' });  // "8.314 J K⁻¹ mol⁻¹"</code></pre>
+
+        <h3><code>toLatex(input, options?)</code></h3>
+        <p>mhchem が生成するのと同じ LaTeX を返します。MathJax・KaTeX (mhchem 拡張を読み込んだもの) でそのまま表示できます。</p>
+        <pre class="code"><code>ChemMarkdown.toLatex('H2O');
+// '{\mathrm{H}{\vphantom{A}}_{\smash[t]{2}}\mathrm{O}}'</code></pre>
+
+        <h3><code>parse(input, options?)</code></h3>
+        <p>mhchem の解析結果 (AST) をそのまま返します。独自の描画をしたいときに使います。</p>
+        <pre class="code"><code>ChemMarkdown.parse('H2O');
+// [ { type_: 'chemfive', a: [], b: [], p: [], o: [{ type_: 'rm', p1: 'H' }], q: ['2'], d: [] },
+//   { type_: 'chemfive', a: [], b: [], p: [], o: [{ type_: 'rm', p1: 'O' }], q: [], d: [] } ]</code></pre>
+
+        <h3><code>initialize(config)</code> ・ <code>run(options?)</code></h3>
+        <p>自動変換の設定と実行です。<a href="#auto-config">10. 自動変換 &gt; 設定と手動実行</a> を参照してください。</p>
+
+        <h3><code>version</code></h3>
+        <p>ライブラリのバージョン文字列です (例: <code>'1.0.0'</code>)。</p>
+
+        <h3>エラー</h3>
+        <p>mhchem が解析できない式を渡すと、<code>toHtml</code>・<code>toText</code>・<code>toLatex</code>・<code>parse</code> は <code>Error</code> を投げます。</p>
+        <pre class="code"><code>try {
+  ChemMarkdown.toHtml('A \\bond{?} B');
+} catch (e) {
+  console.log(e.message);  // "mhchem Error. Unknown bond type (?)"
+}</code></pre>
+
+        <!-- ==================================================== -->
+        <h2 id="auto">10. 自動変換</h2>
+        <p>chem-markdown を読み込んだページでは、決まった書き方をした部分がページ読み込み時に自動で変換されます (mermaid と同じ仕組みです)。</p>
+
+        <h3 id="auto-html">HTML に書く</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>書き方</th><th>種類</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td><code>&lt;pre class="chem"&gt;...&lt;/pre&gt;</code></td><td>ブロック</td><td>1 行に 1 つの式。空行は無視</td></tr>
+              <tr><td><code>&lt;span class="chem"&gt;...&lt;/span&gt;</code></td><td>インライン</td><td>文中の式</td></tr>
+              <tr><td><code>&lt;pre class="pu"&gt;</code> ・ <code>&lt;span class="pu"&gt;</code></td><td>ブロック・インライン</td><td>単位</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre class="code"><code>&lt;pre class="chem"&gt;
+CH4 + 2O2 -&gt; CO2 + 2H2O
+Ag+ + Cl- -&gt; AgCl v
+&lt;/pre&gt;
+&lt;p&gt;塩化銀 &lt;span class="chem"&gt;AgCl&lt;/span&gt; は白色の沈殿です。&lt;/p&gt;</code></pre>
+        <div class="demo">
+          <pre class="chem">
+CH4 + 2O2 -&gt; CO2 + 2H2O
+Ag+ + Cl- -&gt; AgCl v
+</pre>
+          <p>塩化銀 <span class="chem">AgCl</span> は白色の沈殿です。</p>
+        </div>
+        <div class="note">
+          HTML の中では <code>&lt;</code> を <code>&amp;lt;</code>、<code>&gt;</code> を <code>&amp;gt;</code> と書くのが安全です (例: <code>&amp;lt;=&amp;gt;</code>)。<code>-&gt;</code> の <code>&gt;</code> はそのままでも動きますが、<code>&lt;</code> で始まる矢印はタグと誤解されることがあります。
+        </div>
+
+        <h3 id="auto-md">Markdown に書く</h3>
+        <p>Markdown を HTML に変換するページ (marked などを使うもの) では、次の書き方が変換されます。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>書き方</th><th>種類</th></tr></thead>
+            <tbody>
+              <tr><td><code>```chem</code> のコードブロック</td><td>ブロック (化学式)</td></tr>
+              <tr><td><code>```pu</code> のコードブロック</td><td>ブロック (単位)</td></tr>
+              <tr><td><code>`chem:H2O`</code> のインラインコード</td><td>インライン (化学式)</td></tr>
+              <tr><td><code>`pu:123 kJ`</code> のインラインコード</td><td>インライン (単位)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre class="code"><code>水 `chem:H2O` の生成熱は `pu:-286 kJ/mol` です。
+
+```chem
+2H2 + O2 -&gt; 2H2O
+```</code></pre>
+        <p>Markdown を後から HTML にする場合は、自動実行を止め、変換した後で <code>run()</code> を呼びます。</p>
+        <pre class="code"><code>ChemMarkdown.initialize({ startOnLoad: false });
+
+output.innerHTML = marked.parse(markdownText);
+ChemMarkdown.run();</code></pre>
+        <p>動く例は <a href="../examples/markdown.html">examples/markdown.html</a> にあります。</p>
+
+        <h3 id="auto-smiles">構造式 (SMILES)</h3>
+        <p>
+          化学式のブロックやインラインで、<code>smiles:</code> で始まる行は構造式として描きます。描画には
+          <a href="https://github.com/reymond-group/smilesDrawer">SmilesDrawer</a> を使うので、chem-markdown より前に読み込んでください。
+        </p>
+        <pre class="code"><code>&lt;script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"&gt;&lt;/script&gt;
+&lt;script src="chem-markdown.js"&gt;&lt;/script&gt;
+
+&lt;pre class="chem"&gt;
+smiles: CC(=O)Oc1ccccc1C(=O)O
+&lt;/pre&gt;
+&lt;p&gt;ベンゼン &lt;span class="chem"&gt;smiles:c1ccccc1&lt;/span&gt;&lt;/p&gt;</code></pre>
+        <div class="demo">
+          <pre class="chem">
+smiles: CC(=O)Oc1ccccc1C(=O)O
+</pre>
+          <p>ベンゼン <span class="chem">smiles:c1ccccc1</span></p>
+        </div>
+        <p>SmilesDrawer が読み込まれていない場合や、SMILES が正しくない場合は、元の文字列を赤字で表示し、コンソールに警告を出します。</p>
+
+        <h3 id="auto-config">設定と手動実行</h3>
+        <pre class="code"><code>ChemMarkdown.initialize({
+  startOnLoad: true,   // ページ読み込み時に自動変換する (デフォルト: true)
+  prefix: 'chem',      // 出力する CSS クラス名のプレフィックス (デフォルト: 'chem')
+  injectStyles: true,  // 標準 CSS をページに入れる (デフォルト: true)
+  smiles: {            // SmilesDrawer.Drawer に渡すオプション
+    width: 200,        // canvas の幅 (デフォルト: 200)
+    height: 150,       // canvas の高さ (デフォルト: 150)
+  },
+});
+
+ChemMarkdown.run();                                // ページ全体を変換
+ChemMarkdown.run({ querySelector: '.my-chem' });   // セレクタで指定した要素を変換
+ChemMarkdown.run({ nodes: [element1, element2] }); // 要素を直接指定して変換</code></pre>
+        <ul>
+          <li><code>initialize()</code> は、chem-markdown を読み込んだ直後 (ページの読み込みが終わる前) に呼んでください。</li>
+          <li>一度変換した要素には <code>data-processed="true"</code> が付き、<code>run()</code> を何度呼んでも二重には変換されません。後から追加した要素だけが変換されます。</li>
+          <li><code>querySelector</code>・<code>nodes</code> で指定した要素は、<code>&lt;pre&gt;</code>・<code>&lt;div&gt;</code> ならブロック、それ以外はインラインとして変換します。クラス <code>pu</code> (または <code>language-pu</code>) が付いていれば単位として変換します。</li>
+          <li>変換できない式は、元の文字列を <code>.chem-error</code> 付きで表示します。マウスを乗せるとエラーの内容が出ます。</li>
+        </ul>
+
+        <!-- ==================================================== -->
+        <h2 id="style">11. 見た目の調整 (CSS)</h2>
+        <p>
+          上下に積む添字や矢印のレイアウトに必要な CSS は、ブラウザでは自動でページに入ります (<code>&lt;style id="chem-markdown-style-chem"&gt;</code>)。
+          文字の色は周りの文字色を引き継ぐので、ダークモードでもそのまま使えます。フォントや大きさは、次のクラスに CSS を書いて調整します。
+        </p>
+        <pre class="code"><code>/* 化学式を明朝系のフォントで表示する */
+.chem-formula, .chem-pu { font-family: "Times New Roman", serif; }
+
+/* 自動変換のブロックを中央寄せにする */
+.chem-block { text-align: center; }</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>クラス</th><th>付く場所</th></tr></thead>
+            <tbody>
+              <tr><td><code>.chem-formula</code> / <code>.chem-pu</code></td><td>化学式・反応式の全体 / 単位の全体</td></tr>
+              <tr><td><code>.chem-term</code></td><td>反応式の項 (この中では改行しない)</td></tr>
+              <tr><td><code>.chem-sub</code> / <code>.chem-sup</code></td><td>下付き / 上付き</td></tr>
+              <tr><td><code>.chem-ss</code></td><td>上下に積んだ添字 (同位体・Kröger-Vink 記法)</td></tr>
+              <tr><td><code>.chem-coef</code></td><td>係数</td></tr>
+              <tr><td><code>.chem-frac</code></td><td>分数 (<code>.chem-num</code> 分子、<code>.chem-den</code> 分母)</td></tr>
+              <tr><td><code>.chem-arrow</code></td><td>反応矢印 (<code>.chem-arrow-above</code>・<code>.chem-arrow-below</code> が条件)</td></tr>
+              <tr><td><code>.chem-op</code> / <code>.chem-rel</code></td><td>演算子 / 関係記号 (=、≈ など)</td></tr>
+              <tr><td><code>.chem-bond</code></td><td>結合</td></tr>
+              <tr><td><code>.chem-state</code></td><td>状態記号</td></tr>
+              <tr><td><code>.chem-i</code> / <code>.chem-b</code></td><td>斜体 / 太字</td></tr>
+              <tr><td><code>.chem-over</code></td><td><code>\underset</code>・<code>\overset</code></td></tr>
+              <tr><td><code>.chem-error</code></td><td>変換できなかった式</td></tr>
+              <tr><td><code>.chem-block</code> / <code>.chem-line</code></td><td>自動変換のブロック / ブロック内の 1 行</td></tr>
+              <tr><td><code>.chem-inline</code></td><td>自動変換のインライン</td></tr>
+              <tr><td><code>.chem-structure</code></td><td>構造式の <code>&lt;canvas&gt;</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          標準 CSS を使わずにすべて自分で書く場合は <code>initialize({ injectStyles: false })</code> を指定します。プレフィックスを変えた場合 (<code>prefix: 'my'</code>)、クラス名は <code>.my-formula</code> のようになり、標準 CSS もそのプレフィックス用に作られます。
+        </p>
+
+        <!-- ==================================================== -->
+        <h2 id="outputs">12. テキスト・LaTeX 出力</h2>
+        <h3>テキスト出力の規則</h3>
+        <p>テキスト出力は Unicode の文字で表せる範囲での近似です。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>要素</th><th>出力</th><th>例</th></tr></thead>
+            <tbody>
+              <tr><td>下付き・上付き</td><td>Unicode の下付き・上付き文字</td><td>H₂O、SO₄²⁻</td></tr>
+              <tr><td>対応する文字がない添字</td><td><code>_(...)</code>・<code>^(...)</code></td><td>Li<code>_(Li,x)</code></td></tr>
+              <tr><td>同位体</td><td>上付き・下付きを前に置く</td><td>¹⁴₆C</td></tr>
+              <tr><td>酸化数</td><td>上付きのローマ数字 (I と V のみ)</td><td>Feᴵᴵ</td></tr>
+              <tr><td>分数</td><td>½ などの文字、なければ <code>1/3</code> の形</td><td>½ O₂</td></tr>
+              <tr><td>矢印の条件</td><td><code>→[上][下]</code></td><td>→[MnO₂][Δ]</td></tr>
+              <tr><td>平衡矢印</td><td>偏りのある矢印も ⇌</td><td>A ⇌ B</td></tr>
+              <tr><td>特殊な結合</td><td>近い記号</td><td>┄、≂、≅</td></tr>
+              <tr><td>色・<code>\underset</code></td><td>色は無視、注記は括弧で後ろに付ける</td><td>HgI₂ (red)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>LaTeX 出力</h3>
+        <p>
+          <code>toLatex</code> は mhchem 自身が生成する TeX をそのまま返します。この TeX には <code>\tripledash</code> など mhchem が定義するコマンドが含まれるため、表示には mhchem 拡張を読み込んだ MathJax または KaTeX が必要です。
+        </p>
+
+        <!-- ==================================================== -->
+        <h2 id="limits">13. 制約</h2>
+        <ul>
+          <li>
+            <strong><code>$...$</code> の中の TeX</strong>: HTML・テキスト出力で描けるのは次の範囲です。
+            <ul>
+              <li>ギリシャ文字、よく使う記号 (<code>\Delta</code>・<code>\infty</code>・<code>\pm</code>・<code>\times</code>・<code>\cdot</code>・<code>\approx</code>・<code>\le</code>・<code>\ge</code>・矢印など)</li>
+              <li><code>\frac</code>・<code>\sqrt</code>、<code>^</code>・<code>_</code></li>
+              <li><code>\text</code>・<code>\mathrm</code>・<code>\mathit</code>・<code>\mathbf</code>、<code>\underset</code>・<code>\overset</code>・<code>\underbrace</code>、<code>\left</code>・<code>\right</code>、<code>\color</code></li>
+              <li><code>\ce</code>・<code>\pu</code> の入れ子</li>
+            </ul>
+            これ以外のコマンド (行列や複雑な数式など) は、コマンド名をそのまま表示してコンソールに警告を出します。正確に表示するには <code>toLatex</code> の出力を MathJax・KaTeX で表示してください。
+          </li>
+          <li><strong>見た目の細部</strong>: HTML 出力は CSS で組んでいるため、文字の位置や間隔は MathJax と完全には一致しません。並べて比べるには <a href="../examples/mhchem.html">examples/mhchem.html</a> を使ってください。</li>
+          <li><strong>テキスト出力</strong>: Unicode にない上付き・下付き文字は表せないため、近似になります (<a href="#outputs">12</a> を参照)。</li>
+        </ul>
+
+        <!-- ==================================================== -->
+        <h2 id="faq">14. よくある質問</h2>
+        <h3>電荷にしたくない <code>-</code> が電荷になる</h3>
+        <p>末尾の <code>-</code> は電荷として扱われます。ハイフンにしたいときは <code>{-}</code>、結合にしたいときは <code>\bond{-}</code> と書いてください。</p>
+        <h3>足し算のつもりが電荷になる</h3>
+        <p><code>+</code> の前後に空白を入れてください。<code>A+B</code> ではなく <code>A + B</code> です。</p>
+        <h3>沈殿・気体の矢印が出ない</h3>
+        <p><code>v</code>・<code>^</code> の前に空白が必要です。<code>BaSO4 v</code>、<code>H2 ^</code> と書いてください。</p>
+        <h3>自動変換されない</h3>
+        <ul>
+          <li>クラス名が <code>chem</code> (単位は <code>pu</code>) になっているか確認してください。</li>
+          <li>JavaScript で後から追加した要素は、<code>ChemMarkdown.run()</code> を呼ぶと変換されます。</li>
+          <li><code>initialize({ startOnLoad: false })</code> を指定していると自動では変換されません。</li>
+          <li>Markdown のインラインコードは、<code>chem:</code>・<code>pu:</code> で始まるものだけが対象です。</li>
+        </ul>
+        <h3>MathJax と一緒に使える？</h3>
+        <p>使えます。chem-markdown は <code>$...$</code> や <code>\ce{...}</code> と書かれた本文には手を出さないので、MathJax の表示とぶつかりません。</p>
+        <h3>MathJax で書いた式を移したい</h3>
+        <p><code>\ce{...}</code> の中身をそのまま <code>&lt;span class="chem"&gt;</code> や <code>toHtml()</code> に渡せば、同じ解釈で表示されます。</p>
+
+        <!-- ==================================================== -->
+        <h2 id="license">15. ライセンス</h2>
+        <p>
+          chem-markdown は MIT ライセンスです。同梱している mhchemParser (<code>vendor/mhchemParser.js</code>) は Martin Hensel による Apache License 2.0 のソフトウェアです (<code>vendor/mhchemParser.LICENSE.txt</code>)。
+        </p>
+      </main>
+    </div>
+
+    <script>
+      document.getElementById("version").textContent = ChemMarkdown.version;
+
+      // Fill example rows: input / rendered HTML / text output
+      for (const tr of document.querySelectorAll("tr[data-ex]")) {
+        const src = tr.dataset.ex;
+        const type = tr.dataset.type || "ce";
+        const placeholder = tr.querySelector("td[colspan]");
+        const make = (cls) => {
+          const td = document.createElement("td");
+          td.className = cls;
+          tr.insertBefore(td, placeholder);
+          return td;
+        };
+        const input = make("input");
+        const code = document.createElement("code");
+        code.textContent = src;
+        input.appendChild(code);
+        const render = make("render");
+        const text = make("text");
+        try {
+          render.innerHTML = ChemMarkdown.toHtml(src, { type });
+          text.textContent = ChemMarkdown.toText(src, { type });
+        } catch (e) {
+          render.textContent = "ERROR: " + e.message;
+        }
+        placeholder.remove();
+      }
+    </script>
+  </body>
+</html>

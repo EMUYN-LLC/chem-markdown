@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chem-markdown demo</title>
+
+    <!-- MathJax for mhchem -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+          displayMath: [["$$", "$$"]],
+          packages: { "[+]": ["mhchem"] },
+        },
+        loader: { load: ["[tex]/mhchem"] },
+      };
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+      async
+    ></script>
+
+    <!-- SmilesDrawer for structure rendering -->
+    <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
+
+    <!-- chem-markdown library -->
+    <script src="dist/chem-markdown.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #3498db;
+        --secondary: #2ecc71;
+        --accent: #e74c3c;
+        --bg: #f8f9fa;
+        --card-bg: #ffffff;
+        --text: #2c3e50;
+        --text-muted: #7f8c8d;
+        --border: #dee2e6;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 16px;
+        color: white;
+      }
+
+      header h1 {
+        margin: 0 0 10px 0;
+        font-size: 2.5em;
+      }
+
+      header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 1.1em;
+      }
+
+      .section {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .section h2 {
+        margin: 0 0 20px 0;
+        padding-bottom: 12px;
+        border-bottom: 3px solid var(--primary);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section h2 .emoji {
+        font-size: 1.2em;
+      }
+
+      .section h3 {
+        color: var(--text);
+        margin: 20px 0 12px 0;
+        font-size: 1.1em;
+      }
+
+      .example-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+      }
+
+      .example-card {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .example-card .label {
+        font-size: 0.85em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+      }
+
+      .example-card .formula {
+        font-size: 1.4em;
+        margin: 12px 0;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+      }
+
+      .example-card code {
+        display: block;
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        overflow-x: auto;
+      }
+
+      .structure-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .structure-item {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        border: 1px solid var(--border);
+        min-width: 200px;
+      }
+
+      .structure-item .name {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .structure-item canvas {
+        display: block;
+        margin: 10px auto;
+        background: white;
+        border-radius: 4px;
+      }
+
+      .structure-item code {
+        display: block;
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        margin-top: 8px;
+      }
+
+      .reaction-box {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 20px;
+        margin: 16px 0;
+        border: 1px solid var(--border);
+      }
+
+      .reaction-box .title {
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text);
+      }
+
+      .reaction-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 16px 0;
+      }
+
+      .reaction-arrow {
+        font-size: 2em;
+        color: var(--primary);
+      }
+
+      .inline-demo {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        margin: 12px 0;
+        border: 1px solid var(--border);
+        line-height: 2;
+      }
+
+      .inline-structure {
+        display: inline-block;
+        vertical-align: middle;
+        margin: 0 4px;
+      }
+
+      .stereo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .stereo-card {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+
+      .stereo-card .config {
+        display: inline-block;
+        background: var(--primary);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        margin-bottom: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      th {
+        background: var(--bg);
+        font-weight: 600;
+      }
+
+      .feature-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: 600;
+      }
+
+      .badge-mathjax {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .badge-smiles {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+
+      .badge-chem {
+        background: #fff3e0;
+        color: #e65100;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      .tab {
+        padding: 10px 20px;
+        border: none;
+        background: var(--bg);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95em;
+        transition: all 0.2s;
+      }
+
+      .tab:hover {
+        background: var(--border);
+      }
+
+      .tab.active {
+        background: var(--primary);
+        color: white;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      /* chem-markdown styles (layout styles are injected by the library) */
+      .chem-formula,
+      .chem-pu {
+        font-family: "Times New Roman", Times, serif;
+      }
+      .chem-block {
+        margin: 12px 0;
+        padding: 8px 12px;
+        background: var(--bg);
+        border-radius: 6px;
+      }
+      .chem-line {
+        margin: 4px 0;
+        font-size: 1.3em;
+      }
+      .chem-inline .chem-structure {
+        vertical-align: middle;
+      }
+      .chem-error {
+        color: #c0392b;
+        font-family: monospace;
+      }
+
+      /* Settings panel */
+      .settings-panel {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .settings-panel summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .settings-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .setting-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .setting-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      .setting-item label {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      footer {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-muted);
+        margin-top: 40px;
+      }
+
+      @media (max-width: 768px) {
+        header h1 {
+          font-size: 1.8em;
+        }
+
+        .example-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🧪 chem-markdown demo</h1>
+        <p>chem-markdown output, with formulas, structures and equations rendered by MathJax (mhchem) and SmilesDrawer</p>
+      </header>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="formulas">📝 Formulas</button>
+        <button class="tab" data-tab="structures">🔬 Structures</button>
+        <button class="tab" data-tab="reactions">⚗️ Equations</button>
+        <button class="tab" data-tab="stereo">🔄 Stereochemistry</button>
+        <button class="tab" data-tab="inline">📄 Inline</button>
+        <button class="tab" data-tab="advanced">⚙️ Advanced</button>
+        <button class="tab" data-tab="auto">✨ Auto rendering</button>
+      </div>
+
+      <!-- 1. Chemical Formulas -->
+      <div id="formulas" class="tab-content active">
+        <div class="section">
+          <h2>
+            <span class="emoji">📝</span> 1. Chemical formulas
+            <span class="feature-badge badge-mathjax">MathJax mhchem</span>
+          </h2>
+
+          <h3>Basic formulas</h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">Water</div>
+              <div class="formula">$\ce{H2O}$</div>
+              <code>$\ce{H2O}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Carbon dioxide</div>
+              <div class="formula">$\ce{CO2}$</div>
+              <code>$\ce{CO2}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Sulfuric acid</div>
+              <div class="formula">$\ce{H2SO4}$</div>
+              <code>$\ce{H2SO4}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Glucose</div>
+              <div class="formula">$\ce{C6H12O6}$</div>
+              <code>$\ce{C6H12O6}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Sodium chloride</div>
+              <div class="formula">$\ce{NaCl}$</div>
+              <code>$\ce{NaCl}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Acetic acid</div>
+              <div class="formula">$\ce{CH3COOH}$</div>
+              <code>$\ce{CH3COOH}$</code>
+            </div>
+          </div>
+
+          <h3>Ions</h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">Calcium ion</div>
+              <div class="formula">$\ce{Ca^2+}$</div>
+              <code>$\ce{Ca^2+}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Sulfate ion</div>
+              <div class="formula">$\ce{SO4^2-}$</div>
+              <code>$\ce{SO4^2-}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Ammonium ion</div>
+              <div class="formula">$\ce{NH4+}$</div>
+              <code>$\ce{NH4+}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Hydroxide ion</div>
+              <div class="formula">$\ce{OH-}$</div>
+              <code>$\ce{OH-}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Iron(III) ion</div>
+              <div class="formula">$\ce{Fe^3+}$</div>
+              <code>$\ce{Fe^3+}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Carbonate ion</div>
+              <div class="formula">$\ce{CO3^2-}$</div>
+              <code>$\ce{CO3^2-}$</code>
+            </div>
+          </div>
+
+          <h3>States of aggregation</h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">Liquid</div>
+              <div class="formula">$\ce{H2O(l)}$</div>
+              <code>$\ce{H2O(l)}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Gas</div>
+              <div class="formula">$\ce{CO2(g)}$</div>
+              <code>$\ce{CO2(g)}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Solid</div>
+              <div class="formula">$\ce{NaCl(s)}$</div>
+              <code>$\ce{NaCl(s)}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Aqueous</div>
+              <div class="formula">$\ce{NaCl(aq)}$</div>
+              <code>$\ce{NaCl(aq)}$</code>
+            </div>
+          </div>
+
+          <h3>Precipitates and gases</h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">Precipitate (↓)</div>
+              <div class="formula">$\ce{AgCl v}$</div>
+              <code>$\ce{AgCl v}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Gas evolution (↑)</div>
+              <div class="formula">$\ce{CO2 ^}$</div>
+              <code>$\ce{CO2 ^}$</code>
+            </div>
+          </div>
+
+          <h3>
+            chem-markdown library output
+            <span class="feature-badge badge-chem">chem-markdown</span>
+          </h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">HTML output</div>
+              <div class="formula" id="chem-html-demo"></div>
+              <code>ChemMarkdown.toHtml('H2SO4')</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Unicode text output</div>
+              <div
+                class="formula"
+                id="chem-text-demo"
+                style="font-family: sans-serif"
+              ></div>
+              <code>ChemMarkdown.toText('H2SO4')</code>
+            </div>
+            <div class="example-card">
+              <div class="label">LaTeX output</div>
+              <div
+                class="formula"
+                id="chem-latex-demo"
+                style="font-family: monospace; font-size: 0.9em"
+              ></div>
+              <code>ChemMarkdown.toLatex('H2SO4')</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Molecular Structures -->
+      <div id="structures" class="tab-content">
+        <div class="section">
+          <h2>
+            <span class="emoji">🔬</span> 2. Structural formulas (SMILES) <span
+              class="feature-badge badge-smiles"
+              >SmilesDrawer</span
+            >
+          </h2>
+
+          <details class="settings-panel">
+            <summary>Display options</summary>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <input type="checkbox" id="opt-terminalCarbons" checked />
+                <label for="opt-terminalCarbons">Show terminal carbons</label>
+              </div>
+              <div class="setting-item">
+                <input type="checkbox" id="opt-explicitHydrogens" />
+                <label for="opt-explicitHydrogens">Show hydrogens</label>
+              </div>
+              <div class="setting-item">
+                <input type="checkbox" id="opt-compactDrawing" checked />
+                <label for="opt-compactDrawing">Compact drawing</label>
+              </div>
+              <div class="setting-item">
+                <input type="checkbox" id="opt-isomeric" checked />
+                <label for="opt-isomeric">Show stereochemistry</label>
+              </div>
+            </div>
+          </details>
+
+          <h3>Basic molecules</h3>
+          <div class="structure-container" id="basic-structures"></div>
+
+          <h3>Aromatic compounds</h3>
+          <div class="structure-container" id="aromatic-structures"></div>
+
+          <h3>Functional groups</h3>
+          <div class="structure-container" id="functional-structures"></div>
+
+          <h3>Complex molecules (drugs, etc.)</h3>
+          <div class="structure-container" id="complex-structures"></div>
+        </div>
+      </div>
+
+      <!-- 3. Reactions -->
+      <div id="reactions" class="tab-content">
+        <div class="section">
+          <h2>
+            <span class="emoji">⚗️</span> 3. Chemical equations
+            <span class="feature-badge badge-mathjax">MathJax</span>
+          </h2>
+
+          <h3>Arrow types</h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">One-way reaction</div>
+              <div class="formula">$\ce{A + B -> C}$</div>
+              <code>$\ce{A + B -> C}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Equilibrium</div>
+              <div class="formula">$\ce{A <=> B}$</div>
+              <code>$\ce{A <=> B}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Both directions</div>
+              <div class="formula">$\ce{A <--> B}$</div>
+              <code>$\ce{A <--> B}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Equilibrium to the right</div>
+              <div class="formula">$\ce{A <=>> B}$</div>
+              <code>$\ce{A <=>> B}$</code>
+            </div>
+          </div>
+
+          <h3>Reaction conditions</h3>
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="label">Heating</div>
+              <div class="formula">$\ce{A ->[heat] B}$</div>
+              <code>$\ce{A ->[heat] B}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Catalyst</div>
+              <div class="formula">$\ce{A ->[catalyst] B}$</div>
+              <code>$\ce{A ->[catalyst] B}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Heat symbol</div>
+              <div class="formula">$\ce{A ->[\Delta] B}$</div>
+              <code>$\ce{A ->[\Delta] B}$</code>
+            </div>
+            <div class="example-card">
+              <div class="label">Reagents</div>
+              <div class="formula">$\ce{A ->[H2SO4] B}$</div>
+              <code>$\ce{A ->[H2SO4] B}$</code>
+            </div>
+          </div>
+
+          <h3>Real reactions</h3>
+          <div class="reaction-box">
+            <div class="title">Combustion (methane)</div>
+            <div class="formula" style="font-size: 1.3em; text-align: center">
+              $$\ce{CH4 + 2O2 -> CO2 + 2H2O}$$
+            </div>
+            <code>$$\ce{CH4 + 2O2 -> CO2 + 2H2O}$$</code>
+          </div>
+
+          <div class="reaction-box">
+            <div class="title">Haber-Bosch process (ammonia synthesis)</div>
+            <div class="formula" style="font-size: 1.3em; text-align: center">
+              $$\ce{N2 + 3H2 <=>[Fe][\Delta] 2NH3}$$
+            </div>
+            <code>$$\ce{N2 + 3H2 <=>[Fe][\Delta] 2NH3}$$</code>
+          </div>
+
+          <div class="reaction-box">
+            <div class="title">Decomposition of calcium carbonate</div>
+            <div class="formula" style="font-size: 1.3em; text-align: center">
+              $$\ce{CaCO3 ->[\Delta] CaO + CO2 ^}$$
+            </div>
+            <code>$$\ce{CaCO3 ->[\Delta] CaO + CO2 ^}$$</code>
+          </div>
+
+          <div class="reaction-box">
+            <div class="title">Neutralization</div>
+            <div class="formula" style="font-size: 1.3em; text-align: center">
+              $$\ce{HCl(aq) + NaOH(aq) -> NaCl(aq) + H2O(l)}$$
+            </div>
+            <code>$$\ce{HCl(aq) + NaOH(aq) -> NaCl(aq) + H2O(l)}$$</code>
+          </div>
+
+          <div class="reaction-box">
+            <div class="title">Silver mirror reaction</div>
+            <div class="formula" style="font-size: 1.3em; text-align: center">
+              $$\ce{Ag(NH3)2+ + RCHO -> Ag v + RCOO-}$$
+            </div>
+            <code>$$\ce{Ag(NH3)2+ + RCHO -> Ag v + RCOO-}$$</code>
+          </div>
+
+          <h3>Reaction scheme with structures</h3>
+          <div class="reaction-box">
+            <div class="title">Esterification</div>
+            <div class="reaction-display">
+              <div class="structure-item">
+                <div class="name">Ethanol</div>
+                <canvas id="rxn-ethanol" width="150" height="100"></canvas>
+              </div>
+              <div style="font-size: 1.5em">+</div>
+              <div class="structure-item">
+                <div class="name">Acetic acid</div>
+                <canvas id="rxn-acetic" width="150" height="100"></canvas>
+              </div>
+              <div class="reaction-arrow">→</div>
+              <div class="structure-item">
+                <div class="name">Ethyl acetate</div>
+                <canvas id="rxn-ester" width="180" height="100"></canvas>
+              </div>
+              <div style="font-size: 1.5em">+</div>
+              <div class="structure-item">
+                <div class="name">Water</div>
+                <canvas id="rxn-water" width="80" height="80"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Stereochemistry -->
+      <div id="stereo" class="tab-content">
+        <div class="section">
+          <h2>
+            <span class="emoji">🔄</span> 4. Stereochemistry
+            <span class="feature-badge badge-smiles">SMILES</span>
+          </h2>
+
+          <h3>Chiral centers</h3>
+          <p>
+            In SMILES: <code>@</code> = anticlockwise, <code>@@</code> =
+            clockwise
+          </p>
+          <div class="stereo-grid" id="chiral-structures"></div>
+
+          <h3>Geometric isomers (E/Z)</h3>
+          <p>
+            In SMILES: <code>/</code> and <code>\</code> specify the geometry of a double bond
+          </p>
+          <div class="stereo-grid" id="geometric-structures"></div>
+        </div>
+      </div>
+
+      <!-- 5. Inline Structures -->
+      <div id="inline" class="tab-content">
+        <div class="section">
+          <h2><span class="emoji">📄</span> 5. Inline structures</h2>
+
+          <h3>Structures embedded in text</h3>
+          <div class="inline-demo">
+            <p>
+              Water
+              <span class="inline-structure"
+                ><canvas id="inline-water" width="60" height="40"></canvas
+              ></span>
+              is essential for life.
+            </p>
+            <p>
+              Ethanol
+              <span class="inline-structure"
+                ><canvas id="inline-ethanol" width="80" height="50"></canvas
+              ></span>
+              and methanol
+              <span class="inline-structure"
+                ><canvas id="inline-methanol" width="60" height="50"></canvas
+              ></span>
+              look alike, but methanol is toxic.
+            </p>
+            <p>
+              Compounds with a benzene ring
+              <span class="inline-structure"
+                ><canvas id="inline-benzene" width="80" height="60"></canvas
+              ></span>
+              are called aromatic compounds.
+            </p>
+            <p>
+              Aspirin
+              <span class="inline-structure"
+                ><canvas id="inline-aspirin" width="120" height="70"></canvas
+              ></span>
+              is widely used as an analgesic.
+            </p>
+          </div>
+
+          <h3>How it works</h3>
+          <p>
+            SmilesDrawer draws SMILES (e.g. water <code>O</code>, ethanol <code>CCO</code>,
+            benzene <code>c1ccccc1</code>) on <code>&lt;canvas&gt;</code> elements placed in the text.
+            For automatic embedding, see the auto rendering tab
+            (<code>&lt;span class="chem"&gt;smiles:...&lt;/span&gt;</code>).
+          </p>
+        </div>
+      </div>
+
+      <!-- 6. Advanced Features -->
+      <div id="advanced" class="tab-content">
+        <div class="section">
+          <h2><span class="emoji">⚙️</span> 6. Advanced</h2>
+
+          <h3>SMILES symbols</h3>
+          <table>
+            <tr>
+              <th>Symbol</th>
+              <th>Meaning</th>
+              <th>Example</th>
+            </tr>
+            <tr>
+              <td><code>C</code></td>
+              <td>Aliphatic carbon</td>
+              <td>CC (ethane)</td>
+            </tr>
+            <tr>
+              <td><code>c</code></td>
+              <td>Aromatic carbon</td>
+              <td>c1ccccc1 (benzene)</td>
+            </tr>
+            <tr>
+              <td><code>O</code></td>
+              <td>Oxygen</td>
+              <td>CCO (ethanol)</td>
+            </tr>
+            <tr>
+              <td><code>N</code></td>
+              <td>Nitrogen</td>
+              <td>CCN (ethylamine)</td>
+            </tr>
+            <tr>
+              <td><code>S</code></td>
+              <td>Sulfur</td>
+              <td>CS (methanethiol)</td>
+            </tr>
+            <tr>
+              <td><code>=</code></td>
+              <td>Double bond</td>
+              <td>C=C (ethylene)</td>
+            </tr>
+            <tr>
+              <td><code>#</code></td>
+              <td>Triple bond</td>
+              <td>C#C (acetylene)</td>
+            </tr>
+            <tr>
+              <td><code>()</code></td>
+              <td>Branch</td>
+              <td>CC(C)C (isobutane)</td>
+            </tr>
+            <tr>
+              <td><code>[]</code></td>
+              <td>Bracket atom</td>
+              <td>[NH4+] (ammonium)</td>
+            </tr>
+            <tr>
+              <td><code>1-9</code></td>
+              <td>Ring closure</td>
+              <td>C1CCCCC1 (cyclohexane)</td>
+            </tr>
+            <tr>
+              <td><code>@</code></td>
+              <td>Anticlockwise (L-alanine: S)</td>
+              <td>C[C@H](N)C(=O)O</td>
+            </tr>
+            <tr>
+              <td><code>@@</code></td>
+              <td>Clockwise (D-alanine: R)</td>
+              <td>C[C@@H](N)C(=O)O</td>
+            </tr>
+            <tr>
+              <td><code>/</code> <code>\</code></td>
+              <td>Double bond geometry</td>
+              <td>C/C=C/C (trans)</td>
+            </tr>
+          </table>
+
+          <h3>Supported formats</h3>
+          <table>
+            <tr>
+              <th>Format</th>
+              <th>Use</th>
+              <th>Rendered by</th>
+            </tr>
+            <tr>
+              <td>SMILES</td>
+              <td>Structural formulas</td>
+              <td>✅ SmilesDrawer</td>
+            </tr>
+            <tr>
+              <td>mhchem</td>
+              <td>Formulas and equations</td>
+              <td>✅ MathJax</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- 7. Auto Rendering -->
+      <div id="auto" class="tab-content">
+        <div class="section">
+          <h2>
+            <span class="emoji">✨</span> 7. Auto rendering (mermaid-style)
+            <span class="feature-badge badge-chem">chem-markdown</span>
+          </h2>
+
+          <p>
+            On a page that loads chem-markdown, the following markup is rendered automatically when the page loads.
+            Lines starting with <code>smiles:</code> are drawn as structural formulas with SmilesDrawer.
+          </p>
+
+          <h3>Blocks</h3>
+          <pre><code>&lt;pre class="chem"&gt;
+2H2 + O2 -&gt; 2H2O
+N2 + 3H2 &lt;=&gt; 2NH3
+smiles: CC(=O)O
+&lt;/pre&gt;</code></pre>
+          <pre class="chem">
+2H2 + O2 -&gt; 2H2O
+N2 + 3H2 &lt;=&gt; 2NH3
+smiles: CC(=O)O
+</pre>
+
+          <h3>Inline</h3>
+          <pre><code>Sulfuric acid &lt;span class="chem"&gt;H2SO4&lt;/span&gt; and
+benzene &lt;span class="chem"&gt;smiles:c1ccccc1&lt;/span&gt;</code></pre>
+          <p>
+            Sulfuric acid <span class="chem">H2SO4</span> is a strong acid. Benzene
+            <span class="chem">smiles:c1ccccc1</span> is an aromatic compound.
+          </p>
+
+          <h3>Markdown</h3>
+          <p>
+            In Markdown, <code>```chem</code> code blocks and inline code starting with "chem:", such as
+            <code>`chem:H2O`</code>, are rendered. See
+            <a href="examples/markdown.html">examples/markdown.html</a> for a working example.
+          </p>
+        </div>
+      </div>
+
+      <footer>
+        <p>chem-markdown demo</p>
+        <p>MathJax (mhchem) + SmilesDrawer + chem-markdown</p>
+      </footer>
+    </div>
+
+    <script>
+      // ============================================
+      // Demo Application
+      // ============================================
+
+      // Tab switching
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab")
+            .forEach((t) => t.classList.remove("active"));
+          document
+            .querySelectorAll(".tab-content")
+            .forEach((c) => c.classList.remove("active"));
+          tab.classList.add("active");
+          document.getElementById(tab.dataset.tab).classList.add("active");
+          MathJax?.typesetPromise?.();
+        });
+      });
+
+      // SmilesDrawer setup
+      function getDrawerOptions() {
+        return {
+          terminalCarbons:
+            document.getElementById("opt-terminalCarbons")?.checked ?? true,
+          explicitHydrogens:
+            document.getElementById("opt-explicitHydrogens")?.checked ?? false,
+          compactDrawing:
+            document.getElementById("opt-compactDrawing")?.checked ?? true,
+          isomeric: document.getElementById("opt-isomeric")?.checked ?? true,
+        };
+      }
+
+      function createDrawer(overrides = {}) {
+        const opts = { ...getDrawerOptions(), ...overrides };
+        return new SmilesDrawer.Drawer({
+          width: 200,
+          height: 150,
+          bondThickness: 1.2,
+          bondLength: 10,
+          shortBondLength: 0.85,
+          bondSpacing: 0.18 * 8,
+          atomVisualization: "default",
+          debug: false,
+          overlapSensitivity: 0.42,
+          overlapResolutionIterations: 1,
+          fontSizeLarge: 5,
+          fontSizeSmall: 3,
+          padding: 10,
+          themes: {
+            light: {
+              C: "#222",
+              O: "#e74c3c",
+              N: "#3498db",
+              S: "#f1c40f",
+              H: "#bdc3c7",
+              BACKGROUND: "#ffffff",
+            },
+          },
+          ...opts,
+        });
+      }
+
+      let smilesDrawer = createDrawer();
+
+      function drawSmiles(canvasId, smiles, width = 200, height = 150) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        canvas.width = width;
+        canvas.height = height;
+        SmilesDrawer.parse(
+          smiles,
+          (tree) => {
+            smilesDrawer.draw(tree, canvasId, "light", false);
+          },
+          (err) => console.error("SMILES parse error:", smiles, err)
+        );
+      }
+
+      // Structure data
+      const basicStructures = [
+        { name: "Water", smiles: "O", w: 80, h: 60 },
+        { name: "Methane", smiles: "C", w: 80, h: 60 },
+        { name: "Ethane", smiles: "CC", w: 100, h: 80 },
+        { name: "Ethanol", smiles: "CCO", w: 120, h: 80 },
+        { name: "Propane", smiles: "CCC", w: 140, h: 80 },
+        { name: "Isobutane", smiles: "CC(C)C", w: 140, h: 100 },
+      ];
+
+      const aromaticStructures = [
+        { name: "Benzene", smiles: "c1ccccc1", w: 120, h: 100 },
+        { name: "Toluene", smiles: "Cc1ccccc1", w: 140, h: 100 },
+        { name: "Phenol", smiles: "Oc1ccccc1", w: 140, h: 100 },
+        { name: "Aniline", smiles: "Nc1ccccc1", w: 140, h: 100 },
+        { name: "Naphthalene", smiles: "c1ccc2ccccc2c1", w: 180, h: 100 },
+        { name: "Pyridine", smiles: "c1ccncc1", w: 120, h: 100 },
+      ];
+
+      const functionalStructures = [
+        { name: "Acetic acid", smiles: "CC(=O)O", w: 120, h: 100 },
+        { name: "Acetone", smiles: "CC(=O)C", w: 120, h: 100 },
+        { name: "Formaldehyde", smiles: "C=O", w: 80, h: 80 },
+        { name: "Ethylamine", smiles: "CCN", w: 100, h: 80 },
+        { name: "Methanethiol", smiles: "CS", w: 80, h: 80 },
+        { name: "Ethylene", smiles: "C=C", w: 100, h: 60 },
+      ];
+
+      const complexStructures = [
+        { name: "Aspirin", smiles: "CC(=O)Oc1ccccc1C(=O)O", w: 220, h: 140 },
+        {
+          name: "Caffeine",
+          smiles: "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+          w: 220,
+          h: 160,
+        },
+        {
+          name: "Paracetamol",
+          smiles: "CC(=O)Nc1ccc(O)cc1",
+          w: 200,
+          h: 140,
+        },
+        {
+          name: "Ibuprofen",
+          smiles: "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+          w: 240,
+          h: 140,
+        },
+      ];
+
+      function renderStructureContainer(
+        containerId,
+        structures,
+        clear = false
+      ) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (clear) container.innerHTML = "";
+        structures.forEach((struct, i) => {
+          const item = document.createElement("div");
+          item.className = "structure-item";
+          const canvasId = `${containerId}-${i}`;
+          item.innerHTML = `
+          <div class="name">${struct.name}</div>
+          <canvas id="${canvasId}" width="${struct.w}" height="${struct.h}"></canvas>
+          <code>${struct.smiles}</code>
+        `;
+          container.appendChild(item);
+          setTimeout(
+            () => drawSmiles(canvasId, struct.smiles, struct.w, struct.h),
+            50
+          );
+        });
+      }
+
+      function renderAllStructures(clear = false) {
+        renderStructureContainer("basic-structures", basicStructures, clear);
+        renderStructureContainer(
+          "aromatic-structures",
+          aromaticStructures,
+          clear
+        );
+        renderStructureContainer(
+          "functional-structures",
+          functionalStructures,
+          clear
+        );
+        renderStructureContainer(
+          "complex-structures",
+          complexStructures,
+          clear
+        );
+      }
+
+      // Initial render
+      renderAllStructures();
+
+      // Chiral structures
+      const chiralStructures = [
+        { name: "L-Alanine", config: "(S)", smiles: "C[C@H](N)C(=O)O" },
+        { name: "D-Alanine", config: "(R)", smiles: "C[C@@H](N)C(=O)O" },
+        { name: "L-Lactic acid", config: "(S)", smiles: "C[C@H](O)C(=O)O" },
+        { name: "D-Lactic acid", config: "(R)", smiles: "C[C@@H](O)C(=O)O" },
+      ];
+
+      function renderChiralStructures(clear = false) {
+        const container = document.getElementById("chiral-structures");
+        if (!container) return;
+        if (clear) container.innerHTML = "";
+        chiralStructures.forEach((struct, i) => {
+          const card = document.createElement("div");
+          card.className = "stereo-card";
+          const canvasId = `chiral-${i}`;
+          card.innerHTML = `
+          <span class="config">${struct.config}</span>
+          <div class="name">${struct.name}</div>
+          <canvas id="${canvasId}" width="180" height="120"></canvas>
+          <code>${struct.smiles}</code>
+        `;
+          container.appendChild(card);
+          setTimeout(() => drawSmiles(canvasId, struct.smiles, 180, 120), 50);
+        });
+      }
+
+      // Geometric isomers
+      const geometricStructures = [
+        { name: "trans-2-Butene", config: "(E)", smiles: "C/C=C/C" },
+        { name: "cis-2-Butene", config: "(Z)", smiles: "C/C=C\\C" },
+      ];
+
+      function renderGeometricStructures(clear = false) {
+        const container = document.getElementById("geometric-structures");
+        if (!container) return;
+        if (clear) container.innerHTML = "";
+        geometricStructures.forEach((struct, i) => {
+          const card = document.createElement("div");
+          card.className = "stereo-card";
+          const canvasId = `geo-${i}`;
+          card.innerHTML = `
+          <span class="config">${struct.config}</span>
+          <div class="name">${struct.name}</div>
+          <canvas id="${canvasId}" width="180" height="100"></canvas>
+          <code>${struct.smiles}</code>
+        `;
+          container.appendChild(card);
+          setTimeout(() => drawSmiles(canvasId, struct.smiles, 180, 100), 50);
+        });
+      }
+
+      // Reaction structures
+      function renderReactionStructures() {
+        drawSmiles("rxn-ethanol", "CCO", 150, 100);
+        drawSmiles("rxn-acetic", "CC(=O)O", 150, 100);
+        drawSmiles("rxn-ester", "CCOC(=O)C", 180, 100);
+        drawSmiles("rxn-water", "O", 80, 80);
+      }
+
+      // Initial render for stereo/reaction
+      renderChiralStructures();
+      renderGeometricStructures();
+      setTimeout(renderReactionStructures, 200);
+
+      // Settings change handler
+      function reRenderAll() {
+        smilesDrawer = createDrawer();
+        renderAllStructures(true);
+        renderChiralStructures(true);
+        renderGeometricStructures(true);
+        renderReactionStructures();
+      }
+
+      document
+        .querySelectorAll('.settings-panel input[type="checkbox"]')
+        .forEach((checkbox) => {
+          checkbox.addEventListener("change", reRenderAll);
+        });
+
+      // Inline structures
+      setTimeout(() => {
+        const inlineDrawer = new SmilesDrawer.Drawer({
+          width: 60,
+          height: 40,
+          bondThickness: 1,
+          bondLength: 10,
+          compactDrawing: true,
+          padding: 2,
+          themes: {
+            light: {
+              C: "#222",
+              O: "#e74c3c",
+              N: "#3498db",
+              BACKGROUND: "#f8f9fa",
+            },
+          },
+        });
+        function drawInline(id, smiles, w, h) {
+          const canvas = document.getElementById(id);
+          if (!canvas) return;
+          canvas.width = w;
+          canvas.height = h;
+          SmilesDrawer.parse(smiles, (tree) => {
+            inlineDrawer.draw(tree, id, "light", false);
+          });
+        }
+        drawInline("inline-water", "O", 60, 40);
+        drawInline("inline-ethanol", "CCO", 80, 50);
+        drawInline("inline-methanol", "CO", 60, 50);
+        drawInline("inline-benzene", "c1ccccc1", 80, 60);
+        drawInline("inline-aspirin", "CC(=O)Oc1ccccc1C(=O)O", 120, 70);
+      }, 300);
+
+      // chem-markdown output demos
+      document.getElementById("chem-html-demo").innerHTML =
+        ChemMarkdown.toHtml("H2SO4");
+      document.getElementById("chem-text-demo").textContent =
+        ChemMarkdown.toText("H2SO4");
+      document.getElementById("chem-latex-demo").textContent =
+        ChemMarkdown.toLatex("H2SO4");
+
+      // Re-render MathJax
+      MathJax?.typesetPromise?.();
+    </script>
+  </body>
+</html>

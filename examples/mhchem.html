@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chem-markdown vs mhchem</title>
+
+    <!-- MathJax + mhchem (for comparison) -->
+    <script>
+      MathJax = {
+        tex: { inlineMath: [["\\(", "\\)"]], packages: { "[+]": ["mhchem"] } },
+        loader: { load: ["[tex]/mhchem"] },
+        startup: { typeset: false },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+    <!-- chem-markdown library -->
+    <script src="../dist/chem-markdown.js"></script>
+
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0 auto;
+        padding: 16px;
+        max-width: 1200px;
+        color: #222;
+        background: #fff;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #ddd;
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        background: #f3f4f6;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      td.src code {
+        font-size: 12px;
+        word-break: break-all;
+      }
+      td.cm,
+      td.mj {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 20px;
+      }
+      td.txt {
+        font-size: 14px;
+        color: #555;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>chem-markdown vs MathJax mhchem</h1>
+    <p>
+      The examples of the <a href="https://mhchem.github.io/MathJax-mhchem/">mhchem manual</a>, rendered by chem-markdown (HTML),
+      MathJax (mhchem) and chem-markdown (text) side by side.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Input</th>
+            <th>chem-markdown (HTML)</th>
+            <th>MathJax mhchem</th>
+            <th>chem-markdown (text)</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <script>
+      const rows = document.getElementById("rows");
+
+      function addRow(type, src) {
+        const tr = document.createElement("tr");
+        const cell = (cls) => {
+          const td = document.createElement("td");
+          td.className = cls;
+          tr.appendChild(td);
+          return td;
+        };
+        const code = document.createElement("code");
+        code.textContent = (type === "pu" ? "\\pu{" : "\\ce{") + src + "}";
+        cell("src").appendChild(code);
+        try {
+          cell("cm").innerHTML = ChemMarkdown.toHtml(src, { type });
+        } catch (e) {
+          tr.lastChild.textContent = "ERROR: " + e.message;
+        }
+        cell("mj").textContent = "\\(" + (type === "pu" ? "\\pu{" : "\\ce{") + src + "}\\)";
+        try {
+          cell("txt").textContent = ChemMarkdown.toText(src, { type });
+        } catch (e) {
+          tr.lastChild.textContent = "ERROR: " + e.message;
+        }
+        rows.appendChild(tr);
+      }
+
+      fetch("../tests/mhchem-examples.json")
+        .then((r) => r.json())
+        .then((examples) => {
+          examples.ce.forEach((src) => addRow("ce", src));
+          examples.pu.forEach((src) => addRow("pu", src));
+          const typeset = () => MathJax.typesetPromise?.([rows]);
+          if (window.MathJax?.startup?.promise) MathJax.startup.promise.then(typeset);
+          else window.addEventListener("load", () => MathJax.startup.promise.then(typeset));
+        });
+    </script>
+  </body>
+</html>

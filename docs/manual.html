@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>chem-markdown manual</title>
+
+    <!-- SmilesDrawer (for the structural formula examples) -->
+    <script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
+    <!-- chem-markdown library -->
+    <script src="../dist/chem-markdown.js"></script>
+
+    <style>
+      :root {
+        --bg: #ffffff;
+        --bg-soft: #f5f6f8;
+        --text: #1f2328;
+        --muted: #59636e;
+        --border: #d8dee4;
+        --accent: #0b6bcb;
+        --code-bg: #f0f2f5;
+        --note-bg: #fff8e1;
+        --note-border: #e0b400;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #15181c;
+          --bg-soft: #1d2126;
+          --text: #e6e8eb;
+          --muted: #9aa4af;
+          --border: #343a42;
+          --accent: #58a6ff;
+          --code-bg: #232830;
+          --note-bg: #2a2614;
+          --note-border: #9c7f00;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+        line-height: 1.75;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      nav.toc {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 24px 12px 24px 16px;
+        border-right: 1px solid var(--border);
+        font-size: 14px;
+      }
+      nav.toc a {
+        display: block;
+        color: var(--muted);
+        text-decoration: none;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      nav.toc a:hover {
+        color: var(--accent);
+        background: var(--bg-soft);
+      }
+      nav.toc a.sub {
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      main {
+        padding: 24px 32px 80px;
+        min-width: 0;
+      }
+      h1 {
+        font-size: 2em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        margin-top: 56px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--border);
+      }
+      h3 {
+        margin-top: 32px;
+      }
+      a {
+        color: var(--accent);
+      }
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+        font-size: 0.9em;
+      }
+      code {
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre.code {
+        background: var(--code-bg);
+        padding: 12px 14px;
+        border-radius: 8px;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      pre.code code {
+        background: none;
+        padding: 0;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+        font-size: 15px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        background: var(--bg-soft);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      td.render {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 1.3em;
+        white-space: nowrap;
+      }
+      td.text {
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      td.input code {
+        white-space: pre;
+      }
+      .note {
+        background: var(--note-bg);
+        border-left: 4px solid var(--note-border);
+        padding: 10px 14px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+      .demo {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 4px 16px;
+        margin: 12px 0;
+      }
+      .chem-formula,
+      .chem-pu {
+        font-family: "Times New Roman", Times, serif;
+      }
+      .chem-block {
+        margin: 8px 0;
+      }
+      .chem-line {
+        font-size: 1.25em;
+        margin: 2px 0;
+      }
+      .chem-inline .chem-structure {
+        vertical-align: middle;
+      }
+      .lang {
+        margin: 0 0 4px;
+        font-size: 14px;
+      }
+      .lead {
+        color: var(--muted);
+        margin-top: 0;
+      }
+      @media (max-width: 860px) {
+        .layout {
+          display: block;
+        }
+        nav.toc {
+          position: static;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+          padding: 16px;
+        }
+        main {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <nav class="toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <a href="#intro">1. What is chem-markdown</a>
+        <a href="#install">2. Installation</a>
+        <a href="#quick">3. Quick start</a>
+        <a href="#rules">4. Basic rules</a>
+        <a href="#formula">5. Formulas</a>
+        <a class="sub" href="#formula-basic">Elements and subscripts</a>
+        <a class="sub" href="#charge">Charges</a>
+        <a class="sub" href="#coef">Stoichiometric numbers</a>
+        <a class="sub" href="#isotope">Isotopes</a>
+        <a class="sub" href="#oxidation">Oxidation states</a>
+        <a class="sub" href="#bracket">Brackets and complexes</a>
+        <a class="sub" href="#hydrate">Hydrates</a>
+        <a class="sub" href="#state">States of aggregation</a>
+        <a class="sub" href="#bond">Bonds</a>
+        <a class="sub" href="#radical">Radicals and excited states</a>
+        <a href="#reaction">6. Equations</a>
+        <a class="sub" href="#arrow">Arrows</a>
+        <a class="sub" href="#arrow-label">Arrow labels</a>
+        <a class="sub" href="#operator">Operators</a>
+        <a class="sub" href="#gas">Precipitates and gases</a>
+        <a href="#advanced">7. Advanced notation</a>
+        <a class="sub" href="#greek">Greek letters</a>
+        <a class="sub" href="#italic">Variables and italics</a>
+        <a class="sub" href="#upright">Text shown as-is</a>
+        <a class="sub" href="#math">Math ($...$)</a>
+        <a class="sub" href="#kv">Kröger-Vink notation</a>
+        <a class="sub" href="#misc">Miscellaneous</a>
+        <a href="#units">8. Units (\pu)</a>
+        <a href="#api">9. JavaScript API</a>
+        <a href="#auto">10. Auto rendering</a>
+        <a class="sub" href="#auto-html">In HTML</a>
+        <a class="sub" href="#auto-md">In Markdown</a>
+        <a class="sub" href="#auto-smiles">Structural formulas (SMILES)</a>
+        <a class="sub" href="#auto-config">Configuration and manual rendering</a>
+        <a href="#style">11. Styling (CSS)</a>
+        <a href="#outputs">12. Text and LaTeX output</a>
+        <a href="#limits">13. Limitations</a>
+        <a href="#faq">14. FAQ</a>
+        <a href="#license">15. License</a>
+      </nav>
+
+      <main>
+        <h1>chem-markdown manual</h1>
+        <p class="lang">English | <a href="manual.ja.html">日本語</a></p>
+        <p class="lead">Version <span id="version"></span> · Every example on this page is rendered live by chem-markdown itself.</p>
+
+        <!-- ==================================================== -->
+        <h2 id="intro">1. What is chem-markdown</h2>
+        <p>
+          chem-markdown is a JavaScript library for writing chemical formulas, equations and units as plain strings and showing them on web pages.
+          Its syntax is the same as <code>\ce{...}</code> and <code>\pu{...}</code> of <a href="https://mhchem.github.io/MathJax-mhchem/">mhchem</a>,
+          the chemistry extension for MathJax and KaTeX, so formulas written for mhchem work unchanged.
+        </p>
+        <ul>
+          <li><strong>No MathJax needed</strong>: a single <code>&lt;script&gt;</code> tag. One file, no external resources.</li>
+          <li><strong>Three outputs</strong>: HTML (for pages), Unicode text (strings such as H₂O) and LaTeX (identical to mhchem).</li>
+          <li><strong>mermaid-style auto rendering</strong>: write formulas in <code>&lt;pre class="chem"&gt;</code> or a Markdown <code>```chem</code> block and they are rendered when the page loads.</li>
+          <li><strong>Structural formulas</strong>: with SmilesDrawer loaded, structures can be drawn from SMILES.</li>
+        </ul>
+        <p>
+          Formulas are parsed by the bundled <a href="https://github.com/mhchem/mhchemParser">mhchemParser</a>, the official parser written by the author of mhchem.
+          Formulas are therefore interpreted exactly as mhchem interprets them, including subtle rules such as the meaning of spaces.
+        </p>
+
+        <!-- ==================================================== -->
+        <h2 id="install">2. Installation</h2>
+        <h3>From the CDN (jsDelivr)</h3>
+        <pre class="code"><code>&lt;script src="https://cdn.jsdelivr.net/gh/EMUYN-LLC/chem-markdown@v1.0.0/dist/chem-markdown.js"&gt;&lt;/script&gt;</code></pre>
+        <div class="note">
+          <code>@v1.0.0</code> in the URL is a release tag. Always specify a tag so that the version you use stays fixed.
+        </div>
+        <h3>Self-hosting</h3>
+        <p>Copy <code>dist/chem-markdown.js</code> from the repository to your site and load it.</p>
+        <pre class="code"><code>&lt;script src="chem-markdown.js"&gt;&lt;/script&gt;</code></pre>
+        <p>Loading it defines the global variable <code>ChemMarkdown</code>. In Node.js, <code>require('./chem-markdown.js')</code> returns the same object (the conversion functions to HTML, text and LaTeX are available).</p>
+
+        <!-- ==================================================== -->
+        <h2 id="quick">3. Quick start</h2>
+        <p>The simplest way is to write formulas in <code>&lt;pre class="chem"&gt;</code>. No JavaScript is required.</p>
+        <pre class="code"><code>&lt;script src="chem-markdown.js"&gt;&lt;/script&gt;
+
+&lt;pre class="chem"&gt;
+2H2 + O2 -&gt; 2H2O
+N2 + 3H2 &lt;=&gt; 2NH3
+&lt;/pre&gt;
+
+&lt;p&gt;The heat of formation of water &lt;span class="chem"&gt;H2O&lt;/span&gt; is &lt;span class="pu"&gt;-286 kJ/mol&lt;/span&gt;.&lt;/p&gt;</code></pre>
+        <p>Result:</p>
+        <div class="demo">
+          <pre class="chem">
+2H2 + O2 -&gt; 2H2O
+N2 + 3H2 &lt;=&gt; 2NH3
+</pre>
+          <p>The heat of formation of water <span class="chem">H2O</span> is <span class="pu">-286 kJ/mol</span>.</p>
+        </div>
+        <p>You can also convert strings from JavaScript.</p>
+        <pre class="code"><code>ChemMarkdown.toHtml('H2SO4');   // HTML string
+ChemMarkdown.toText('H2SO4');   // "H₂SO₄"
+ChemMarkdown.toLatex('H2SO4');  // LaTeX identical to mhchem</code></pre>
+
+        <!-- ==================================================== -->
+        <h2 id="rules">4. Basic rules</h2>
+        <p>mhchem notation is designed to "look like chemistry as written", but a few rules are worth remembering.</p>
+        <ul>
+          <li><strong>Spaces matter</strong>: <code>A + B</code> (spaces around) is addition, <code>H+</code> (no space) is a charge. <code>A - B</code> is subtraction, <code>A-B</code> is a single bond.</li>
+          <li><strong>A trailing <code>+</code> / <code>-</code> is a charge</strong>: <code>Cl-</code> is Cl⁻. To show a hyphen, write <code>{-}</code>.</li>
+          <li><strong>Position decides the meaning of numbers</strong>: a number before a formula is a stoichiometric number; a number after an element or bracket is a subscript.</li>
+          <li><strong><code>{ }</code> shows its content as-is</strong>: in <code>{Gluconic Acid}</code> the content is not interpreted as a formula.</li>
+          <li><strong><code>$ $</code> contains math</strong>: italic variables, fractions and so on.</li>
+        </ul>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="H+"><td colspan="3"></td><td>No space: charge</td></tr>
+              <tr data-ex="H + Cl"><td colspan="3"></td><td>Spaces: addition</td></tr>
+              <tr data-ex="A-B"><td colspan="3"></td><td>No space: single bond</td></tr>
+              <tr data-ex="A - B"><td colspan="3"></td><td>Spaces: subtraction</td></tr>
+              <tr data-ex="Cl-"><td colspan="3"></td><td>A trailing - is a charge</td></tr>
+              <tr data-ex="{Gluconic Acid} + H2O2"><td colspan="3"></td><td>{ } content is shown as-is</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="formula">5. Formulas</h2>
+
+        <h3 id="formula-basic">Elements and subscripts</h3>
+        <p>Numbers after element symbols become subscripts automatically. <code>_</code> makes a subscript explicitly.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="H2O"><td colspan="3"></td><td>Water</td></tr>
+              <tr data-ex="Sb2O3"><td colspan="3"></td><td>Two-letter symbols</td></tr>
+              <tr data-ex="C6H12O6"><td colspan="3"></td><td>Two-digit subscripts</td></tr>
+              <tr data-ex="CH3COOH"><td colspan="3"></td><td>Condensed formula</td></tr>
+              <tr data-ex="(CH3)3COH"><td colspan="3"></td><td>Subscript after brackets</td></tr>
+              <tr data-ex="NO_x"><td colspan="3"></td><td>Subscript with _ (letters are italic)</td></tr>
+              <tr data-ex="X_{{red}}"><td colspan="3"></td><td>Text subscript ({ } makes it upright)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="charge">Charges</h3>
+        <p>A trailing <code>+</code> / <code>-</code> is a charge; <code>^</code> may be added. Put the number before the sign.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="H+"><td colspan="3"></td><td>Monovalent cation</td></tr>
+              <tr data-ex="Cl-"><td colspan="3"></td><td>Monovalent anion</td></tr>
+              <tr data-ex="Ca^2+"><td colspan="3"></td><td>Divalent (with ^)</td></tr>
+              <tr data-ex="CrO4^2-"><td colspan="3"></td><td>Charge after a subscript</td></tr>
+              <tr data-ex="NH4+"><td colspan="3"></td><td>Polyatomic ion</td></tr>
+              <tr data-ex="Y^{99+}"><td colspan="3"></td><td>Braces are allowed</td></tr>
+              <tr data-ex="Fe^n+"><td colspan="3"></td><td>Variable charge (italic)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="coef">Stoichiometric numbers</h3>
+        <p>A number before a formula is a stoichiometric number; a space between them is optional. <code>1/2</code> is shown as a fraction.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="2H2O"><td colspan="3"></td><td>Integer</td></tr>
+              <tr data-ex="2 H2O"><td colspan="3"></td><td>Same with a space</td></tr>
+              <tr data-ex="0.5 H2O"><td colspan="3"></td><td>Decimal</td></tr>
+              <tr data-ex="1/2 H2O"><td colspan="3"></td><td>Fraction</td></tr>
+              <tr data-ex="(1/2) H2O"><td colspan="3"></td><td>In parentheses: not a fraction</td></tr>
+              <tr data-ex="$n$ H2O"><td colspan="3"></td><td>Variable (written as math)</td></tr>
+              <tr data-ex="x H2O"><td colspan="3"></td><td>A single letter is italic even without $ $</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="isotope">Isotopes</h3>
+        <p>Mass number at the upper left, atomic number at the lower left: <code>^{mass}_{atomic number}Element</code>.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="^{14}_{6}C"><td colspan="3"></td><td>Carbon-14</td></tr>
+              <tr data-ex="^{227}_{90}Th+"><td colspan="3"></td><td>With a charge</td></tr>
+              <tr data-ex="^227_90Th+"><td colspan="3"></td><td>Braces can be omitted</td></tr>
+              <tr data-ex="^{0}_{-1}n^{-}"><td colspan="3"></td><td>Negative atomic number</td></tr>
+              <tr data-ex="^{235}_{92}U + ^{1}_{0}n -> ^{141}_{56}Ba + ^{92}_{36}Kr + 3^{1}_{0}n"><td colspan="3"></td><td>Nuclear reaction</td></tr>
+              <tr data-ex="H{}^3HO"><td colspan="3"></td><td>{} separates: the script goes to the next element</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="oxidation">Oxidation states</h3>
+        <p>Roman numerals in <code>^{ }</code> are shown at the upper right as oxidation states.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="Fe^{II}"><td colspan="3"></td><td>Iron(II)</td></tr>
+              <tr data-ex="Fe^{II}Fe^{III}2O4"><td colspan="3"></td><td>Magnetite</td></tr>
+              <tr data-ex="[Hg^{II}I4]^2-"><td colspan="3"></td><td>Oxidation state in a complex</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="bracket">Brackets and complexes</h3>
+        <p><code>( )</code> and <code>[ ]</code> are shown as brackets; a following number is a subscript and <code>+</code> / <code>-</code> is a charge.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="Ca(OH)2"><td colspan="3"></td><td>Parentheses</td></tr>
+              <tr data-ex="(NH4)2S"><td colspan="3"></td><td>Subscript after brackets</td></tr>
+              <tr data-ex="[AgCl2]-"><td colspan="3"></td><td>Square brackets and charge</td></tr>
+              <tr data-ex="[Cu(NH3)4]^2+"><td colspan="3"></td><td>Complex ion</td></tr>
+              <tr data-ex="K4[Fe(CN)6]"><td colspan="3"></td><td>Complex salt</td></tr>
+              <tr data-ex="[Pt(\eta^2-C2H4)Cl3]-"><td colspan="3"></td><td>Complex with hapticity</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="hydrate">Hydrates and addition compounds</h3>
+        <p><code>*</code> or <code>.</code> becomes "·". Spaces around it are optional.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="CuSO4*5H2O"><td colspan="3"></td><td>With *</td></tr>
+              <tr data-ex="CuSO4.5H2O"><td colspan="3"></td><td>With .</td></tr>
+              <tr data-ex="KCr(SO4)2 * 12 H2O"><td colspan="3"></td><td>Spaces are allowed</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="state">States of aggregation and crystal systems</h3>
+        <p>Write <code>(s)</code>, <code>(l)</code>, <code>(g)</code> or <code>(aq)</code> right after the formula. Wrapped in <code>_{ }</code>, it becomes a subscript.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="H2O(l)"><td colspan="3"></td><td>Liquid</td></tr>
+              <tr data-ex="NaCl(s)"><td colspan="3"></td><td>Solid</td></tr>
+              <tr data-ex="H2(g)"><td colspan="3"></td><td>Gas</td></tr>
+              <tr data-ex="H2(aq)"><td colspan="3"></td><td>Aqueous</td></tr>
+              <tr data-ex="CO3^2-_{(aq)}"><td colspan="3"></td><td>Subscripted state</td></tr>
+              <tr data-ex="NaOH(aq,$\infty$)"><td colspan="3"></td><td>Infinite dilution</td></tr>
+              <tr data-ex="ZnS($c$)"><td colspan="3"></td><td>Crystal system (italic)</td></tr>
+              <tr data-ex="CuS($hP12$)"><td colspan="3"></td><td>Pearson symbol</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="bond">Bonds</h3>
+        <p>Inside a formula, <code>-</code>, <code>=</code> and <code>#</code> are single, double and triple bonds. Special bonds are written as <code>\bond{kind}</code>.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="C6H5-CHO"><td colspan="3"></td><td>Single bond</td></tr>
+              <tr data-ex="CH2=CH2"><td colspan="3"></td><td>Double bond</td></tr>
+              <tr data-ex="CH#CH"><td colspan="3"></td><td>Triple bond</td></tr>
+              <tr data-ex="A\bond{1}B\bond{2}C\bond{3}D"><td colspan="3"></td><td>\bond{1} to {3} also work</td></tr>
+              <tr data-ex="A\bond{~}B"><td colspan="3"></td><td>Dashed (partial bond)</td></tr>
+              <tr data-ex="A\bond{~-}B"><td colspan="3"></td><td>Dashed + solid (bond order 1.5)</td></tr>
+              <tr data-ex="A\bond{~=}B"><td colspan="3"></td><td>Dashed + two solid (same as \bond{~--})</td></tr>
+              <tr data-ex="A\bond{-~-}B"><td colspan="3"></td><td>Solid, dashed, solid</td></tr>
+              <tr data-ex="A\bond{...}B\bond{....}C"><td colspan="3"></td><td>Three / four dots</td></tr>
+              <tr data-ex="A\bond{->}B\bond{<-}C"><td colspan="3"></td><td>Dative bond (arrow)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          If a polymer repeat unit is written as <code>[-CH2-CH2-]_n</code>, the trailing <code>-</code> is taken as a charge (MathJax's mhchem does the same). To show a bond, use <code>{-}</code> as in <code>[-CH2-CH2{-}]_n</code>.
+        </div>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="[-CH2-CH2-]_n"><td colspan="3"></td><td>The trailing - becomes a charge</td></tr>
+              <tr data-ex="[-CH2-CH2{-}]_n"><td colspan="3"></td><td>{-} makes it a hyphen</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="radical">Radicals and excited states</h3>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="CH3^{.}"><td colspan="3"></td><td>Radical (^{.})</td></tr>
+              <tr data-ex="OCO^{.-}"><td colspan="3"></td><td>Radical anion</td></tr>
+              <tr data-ex="NO^{(2).-}"><td colspan="3"></td><td>Number of unpaired electrons</td></tr>
+              <tr data-ex="NO^*"><td colspan="3"></td><td>Excited state</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="reaction">6. Equations</h2>
+        <p>Connect formulas with operators (such as <code>+</code>) and arrows. Put spaces around operators and arrows.</p>
+
+        <h3 id="arrow">Arrows</h3>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="A -> B"><td colspan="3"></td><td>Reaction</td></tr>
+              <tr data-ex="A <- B"><td colspan="3"></td><td>Reverse</td></tr>
+              <tr data-ex="A <-> B"><td colspan="3"></td><td>Resonance</td></tr>
+              <tr data-ex="A <--> B"><td colspan="3"></td><td>Both directions</td></tr>
+              <tr data-ex="A <=> B"><td colspan="3"></td><td>Equilibrium</td></tr>
+              <tr data-ex="A <=>> B"><td colspan="3"></td><td>Equilibrium to the right</td></tr>
+              <tr data-ex="A <<=> B"><td colspan="3"></td><td>Equilibrium to the left</td></tr>
+              <tr data-ex="A → B"><td colspan="3"></td><td>Unicode arrows also work (→ ⟶ ⇌)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="arrow-label">Arrow labels</h3>
+        <p>The first <code>[ ]</code> after an arrow is shown above it, the second below it. The content is parsed as a formula; wrap text in <code>{ }</code> and math in <code>$ $</code>.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="A ->[H2O] B"><td colspan="3"></td><td>Above only</td></tr>
+              <tr data-ex="A ->[{text above}][{text below}] B"><td colspan="3"></td><td>Text above and below</td></tr>
+              <tr data-ex="A ->[$x$][$x_i$] B"><td colspan="3"></td><td>Math</td></tr>
+              <tr data-ex="2KClO3 ->[MnO2][\Delta] 2KCl + 3O2 ^"><td colspan="3"></td><td>Catalyst and heat</td></tr>
+              <tr data-ex="N2 + 3H2 <=>[{Fe catalyst}][{high T, high p}] 2NH3"><td colspan="3"></td><td>Labels on equilibrium arrows</td></tr>
+              <tr data-ex="Hg^2+ ->[I-] HgI2 ->[I-] [Hg^{II}I4]^2-"><td colspan="3"></td><td>Multi-step reaction</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="operator">Operators</h3>
+        <p><code>+</code>, <code>-</code>, <code>=</code> and <code>\pm</code> with spaces around them are operators. Formulas can also be listed with <code>,</code> and <code>;</code>.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="A + B"><td colspan="3"></td><td>Plus</td></tr>
+              <tr data-ex="A - B"><td colspan="3"></td><td>Minus</td></tr>
+              <tr data-ex="A = B"><td colspan="3"></td><td>Equals</td></tr>
+              <tr data-ex="A \pm B"><td colspan="3"></td><td>Plus-minus</td></tr>
+              <tr data-ex="A, B, C; F"><td colspan="3"></td><td>Enumeration</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="gas">Precipitates and gases</h3>
+        <p><code>v</code> preceded by a space is a precipitate (↓), <code>^</code> preceded by a space is a gas (↑).</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="Ba^2+ + SO4^2- -> BaSO4 v"><td colspan="3"></td><td>Precipitate</td></tr>
+              <tr data-ex="Zn + 2HCl -> ZnCl2 + H2 ^"><td colspan="3"></td><td>Gas evolution</td></tr>
+              <tr data-ex="x Na(NH4)HPO4 ->[\Delta] (NaPO3)_x + x NH3 ^ + x H2O"><td colspan="3"></td><td>Complex example</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Long equations break lines only right after <code>+</code> or an arrow. A term (stoichiometric number, formula and ↓/↑) is never broken.</p>
+
+        <!-- ==================================================== -->
+        <h2 id="advanced">7. Advanced notation</h2>
+
+        <h3 id="greek">Greek letters</h3>
+        <p>Use TeX names such as <code>\alpha</code>.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="\mu-Cl"><td colspan="3"></td><td>Bridging ligand</td></tr>
+              <tr data-ex="^40_18Ar + \gamma{} + \nu_e"><td colspan="3"></td><td>Gamma ray and neutrino</td></tr>
+              <tr data-ex="\beta +"><td colspan="3"></td><td>β⁺</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="italic">Variables and italics</h3>
+        <p>Content in <code>$ $</code> is math (italic). It also works for prefixes such as <code>cis</code>.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="$cis${-}[PtCl2(NH3)2]"><td colspan="3"></td><td>Prefix (hyphen as {-})</td></tr>
+              <tr data-ex="n-Pr"><td colspan="3"></td><td>n-Propyl</td></tr>
+              <tr data-ex="X_{$i$}^{$x$}"><td colspan="3"></td><td>Variables in scripts</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="upright">Text shown as-is</h3>
+        <p>Content in <code>{ }</code> is not parsed as a formula; it is shown as upright text.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="{Gluconic Acid} + H2O2"><td colspan="3"></td><td>Names</td></tr>
+              <tr data-ex="{(+)}_589{-}[Co(en)3]Cl3"><td colspan="3"></td><td>Optical rotation</td></tr>
+              <tr data-ex="{and others}"><td colspan="3"></td><td>Text</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="math">Math ($...$)</h3>
+        <p>TeX math can be written inside <code>$ $</code>. Use <code>\ce{...}</code> inside the math to switch back to formulas.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="$K = \frac{[\ce{Hg^2+}][\ce{Hg}]}{[\ce{Hg2^2+}]}$"><td colspan="3"></td><td>Equilibrium constant</td></tr>
+              <tr data-ex="Fe(CN)_{$\frac{6}{2}$}"><td colspan="3"></td><td>Fraction as a subscript</td></tr>
+              <tr data-ex="Hg^2+ ->[I-] $\underset{\mathrm{red}}{\ce{HgI2}}$"><td colspan="3"></td><td>Annotation under a formula</td></tr>
+              <tr data-ex="CH4 + 2 $\left( \ce{O2 + 79/21 N2} \right)$"><td colspan="3"></td><td>Parentheses around formulas</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          The TeX that the HTML and text output can render is limited. See <a href="#limits">13. Limitations</a>.
+        </div>
+
+        <h3 id="kv">Kröger-Vink notation</h3>
+        <p>Notation for crystal defects: <code>x</code> (neutral), <code>.</code> (positive) and <code>'</code> (negative) as superscripts, the site as a subscript.</p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="Li^x_{Li,1-2x}Mg^._{Li,x}$V$'_{Li,x}Cl^x_{Cl}"><td colspan="3"></td><td>Combined example</td></tr>
+              <tr data-ex="O''_{i,x}"><td colspan="3"></td><td>Interstitial oxygen</td></tr>
+              <tr data-ex="M^{..}_i"><td colspan="3"></td><td>Doubly positive defect</td></tr>
+              <tr data-ex="$V$^{4'}_{Ti}"><td colspan="3"></td><td>Vacancy</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="misc">Miscellaneous</h3>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="1s^2-N"><td colspan="3"></td><td>Orbital</td></tr>
+              <tr data-ex="iPr"><td colspan="3"></td><td>Isopropyl</td></tr>
+              <tr data-ex="\ca Fe"><td colspan="3"></td><td>Circa</td></tr>
+              <tr data-ex="\color{red}{CH3}COOH"><td colspan="3"></td><td>Color</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="units">8. Units (\pu)</h2>
+        <p>
+          Numbers and units are written as in mhchem's <code>\pu</code>. In JavaScript, pass <code>{ type: 'pu' }</code>; for auto rendering, use the class <code>pu</code>.
+        </p>
+        <div class="table-wrap">
+          <table class="examples">
+            <thead><tr><th>Input</th><th>Rendered</th><th>Text output</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr data-ex="123 kJ" data-type="pu"><td colspan="3"></td><td>Number and unit</td></tr>
+              <tr data-ex="123 mm2" data-type="pu"><td colspan="3"></td><td>A number after a unit is an exponent</td></tr>
+              <tr data-ex="123 J s" data-type="pu"><td colspan="3"></td><td>Product (space)</td></tr>
+              <tr data-ex="123 J*s" data-type="pu"><td colspan="3"></td><td>Product (·)</td></tr>
+              <tr data-ex="123 kJ/mol" data-type="pu"><td colspan="3"></td><td>Quotient (/)</td></tr>
+              <tr data-ex="123 kJ//mol" data-type="pu"><td colspan="3"></td><td>Quotient as a fraction</td></tr>
+              <tr data-ex="8.314 J K-1 mol-1" data-type="pu"><td colspan="3"></td><td>Negative exponents</td></tr>
+              <tr data-ex="1.2e3 kJ" data-type="pu"><td colspan="3"></td><td>Scientific notation (e gives ·)</td></tr>
+              <tr data-ex="1.2E3 kJ" data-type="pu"><td colspan="3"></td><td>Scientific notation (E gives ×)</td></tr>
+              <tr data-ex="6.02e23 mol-1" data-type="pu"><td colspan="3"></td><td>Avogadro constant</td></tr>
+              <tr data-ex="1,2e3 kJ" data-type="pu"><td colspan="3"></td><td>Decimal comma</td></tr>
+              <tr data-ex="12 345.678 9 kJ" data-type="pu"><td colspan="3"></td><td>Digit grouping with spaces</td></tr>
+              <tr data-ex="-273.15 \degree C" data-type="pu"><td colspan="3"></td><td>Temperature (\degree)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================================================== -->
+        <h2 id="api">9. JavaScript API</h2>
+        <p>All functions live on the <code>ChemMarkdown</code> object. <code>options.type</code> is <code>'ce'</code> (formulas and equations, default) or <code>'pu'</code> (units).</p>
+
+        <h3><code>toHtml(input, options?)</code></h3>
+        <p>Returns an HTML string. <code>options.prefix</code> changes the CSS class prefix (default <code>'chem'</code>). In a browser, the default stylesheet is inserted into the page once.</p>
+        <pre class="code"><code>ChemMarkdown.toHtml('H2O');
+// '&lt;span class="chem-formula"&gt;&lt;span class="chem-term"&gt;H&lt;sub class="chem-sub"&gt;2&lt;/sub&gt;O&lt;/span&gt;&lt;/span&gt;'
+
+ChemMarkdown.toHtml('123 kJ/mol', { type: 'pu' });
+ChemMarkdown.toHtml('H2O', { prefix: 'my' });  // class="my-formula" ...
+
+document.getElementById('out').innerHTML = ChemMarkdown.toHtml('2H2 + O2 -&gt; 2H2O');</code></pre>
+
+        <h3><code>toText(input, options?)</code></h3>
+        <p>Returns text using Unicode superscript and subscript characters. Useful where HTML cannot be used, such as <code>title</code> attributes, buttons and notifications.</p>
+        <pre class="code"><code>ChemMarkdown.toText('SO4^2-');                          // "SO₄²⁻"
+ChemMarkdown.toText('N2 + 3H2 &lt;=&gt; 2NH3');                // "N₂ + 3 H₂ ⇌ 2 NH₃"
+ChemMarkdown.toText('8.314 J K-1 mol-1', { type: 'pu' });  // "8.314 J K⁻¹ mol⁻¹"</code></pre>
+
+        <h3><code>toLatex(input, options?)</code></h3>
+        <p>Returns exactly the LaTeX that mhchem generates. It can be displayed as-is with MathJax or KaTeX (with the mhchem extension loaded).</p>
+        <pre class="code"><code>ChemMarkdown.toLatex('H2O');
+// '{\mathrm{H}{\vphantom{A}}_{\smash[t]{2}}\mathrm{O}}'</code></pre>
+
+        <h3><code>parse(input, options?)</code></h3>
+        <p>Returns mhchem's parse result (AST) as-is, for custom rendering.</p>
+        <pre class="code"><code>ChemMarkdown.parse('H2O');
+// [ { type_: 'chemfive', a: [], b: [], p: [], o: [{ type_: 'rm', p1: 'H' }], q: ['2'], d: [] },
+//   { type_: 'chemfive', a: [], b: [], p: [], o: [{ type_: 'rm', p1: 'O' }], q: [], d: [] } ]</code></pre>
+
+        <h3><code>initialize(config)</code> · <code>run(options?)</code></h3>
+        <p>Configure and run auto rendering. See <a href="#auto-config">10. Auto rendering &gt; Configuration and manual rendering</a>.</p>
+
+        <h3><code>version</code></h3>
+        <p>The library version string (e.g. <code>'1.0.0'</code>).</p>
+
+        <h3>Errors</h3>
+        <p>When mhchem cannot parse the input, <code>toHtml</code>, <code>toText</code>, <code>toLatex</code> and <code>parse</code> throw an <code>Error</code>.</p>
+        <pre class="code"><code>try {
+  ChemMarkdown.toHtml('A \\bond{?} B');
+} catch (e) {
+  console.log(e.message);  // "mhchem Error. Unknown bond type (?)"
+}</code></pre>
+
+        <!-- ==================================================== -->
+        <h2 id="auto">10. Auto rendering</h2>
+        <p>On a page that loads chem-markdown, markup written in a specific way is rendered automatically when the page loads (the same idea as mermaid).</p>
+
+        <h3 id="auto-html">In HTML</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Markup</th><th>Kind</th><th>Content</th></tr></thead>
+            <tbody>
+              <tr><td><code>&lt;pre class="chem"&gt;...&lt;/pre&gt;</code></td><td>Block</td><td>One formula per line; empty lines are ignored</td></tr>
+              <tr><td><code>&lt;span class="chem"&gt;...&lt;/span&gt;</code></td><td>Inline</td><td>A formula in running text</td></tr>
+              <tr><td><code>&lt;pre class="pu"&gt;</code> · <code>&lt;span class="pu"&gt;</code></td><td>Block / inline</td><td>Units</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre class="code"><code>&lt;pre class="chem"&gt;
+CH4 + 2O2 -&gt; CO2 + 2H2O
+Ag+ + Cl- -&gt; AgCl v
+&lt;/pre&gt;
+&lt;p&gt;Silver chloride &lt;span class="chem"&gt;AgCl&lt;/span&gt; is a white precipitate.&lt;/p&gt;</code></pre>
+        <div class="demo">
+          <pre class="chem">
+CH4 + 2O2 -&gt; CO2 + 2H2O
+Ag+ + Cl- -&gt; AgCl v
+</pre>
+          <p>Silver chloride <span class="chem">AgCl</span> is a white precipitate.</p>
+        </div>
+        <div class="note">
+          In HTML it is safest to write <code>&lt;</code> as <code>&amp;lt;</code> and <code>&gt;</code> as <code>&amp;gt;</code> (e.g. <code>&amp;lt;=&amp;gt;</code>). The <code>&gt;</code> in <code>-&gt;</code> works as-is, but arrows starting with <code>&lt;</code> can be mistaken for tags.
+        </div>
+
+        <h3 id="auto-md">In Markdown</h3>
+        <p>On pages that convert Markdown to HTML (with marked etc.), the following are rendered.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Markup</th><th>Kind</th></tr></thead>
+            <tbody>
+              <tr><td><code>```chem</code> code block</td><td>Block (formulas)</td></tr>
+              <tr><td><code>```pu</code> code block</td><td>Block (units)</td></tr>
+              <tr><td>Inline code <code>`chem:H2O`</code></td><td>Inline (formula)</td></tr>
+              <tr><td>Inline code <code>`pu:123 kJ`</code></td><td>Inline (units)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre class="code"><code>The heat of formation of water `chem:H2O` is `pu:-286 kJ/mol`.
+
+```chem
+2H2 + O2 -&gt; 2H2O
+```</code></pre>
+        <p>If the Markdown is converted later, turn off automatic rendering and call <code>run()</code> after converting.</p>
+        <pre class="code"><code>ChemMarkdown.initialize({ startOnLoad: false });
+
+output.innerHTML = marked.parse(markdownText);
+ChemMarkdown.run();</code></pre>
+        <p>A working example is in <a href="../examples/markdown.html">examples/markdown.html</a>.</p>
+
+        <h3 id="auto-smiles">Structural formulas (SMILES)</h3>
+        <p>
+          In formula blocks and inline elements, lines starting with <code>smiles:</code> are drawn as structural formulas with
+          <a href="https://github.com/reymond-group/smilesDrawer">SmilesDrawer</a>. Load it before chem-markdown.
+        </p>
+        <pre class="code"><code>&lt;script src="https://unpkg.com/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"&gt;&lt;/script&gt;
+&lt;script src="chem-markdown.js"&gt;&lt;/script&gt;
+
+&lt;pre class="chem"&gt;
+smiles: CC(=O)Oc1ccccc1C(=O)O
+&lt;/pre&gt;
+&lt;p&gt;Benzene &lt;span class="chem"&gt;smiles:c1ccccc1&lt;/span&gt;&lt;/p&gt;</code></pre>
+        <div class="demo">
+          <pre class="chem">
+smiles: CC(=O)Oc1ccccc1C(=O)O
+</pre>
+          <p>Benzene <span class="chem">smiles:c1ccccc1</span></p>
+        </div>
+        <p>If SmilesDrawer is not loaded or the SMILES is invalid, the original text is shown in red with a console warning.</p>
+
+        <h3 id="auto-config">Configuration and manual rendering</h3>
+        <pre class="code"><code>ChemMarkdown.initialize({
+  startOnLoad: true,   // render automatically on page load (default: true)
+  prefix: 'chem',      // prefix of the generated CSS class names (default: 'chem')
+  injectStyles: true,  // insert the default stylesheet into the page (default: true)
+  smiles: {            // options passed to SmilesDrawer.Drawer
+    width: 200,        // canvas width (default: 200)
+    height: 150,       // canvas height (default: 150)
+  },
+});
+
+ChemMarkdown.run();                                // render the whole page
+ChemMarkdown.run({ querySelector: '.my-chem' });   // render elements matching a selector
+ChemMarkdown.run({ nodes: [element1, element2] }); // render the given elements</code></pre>
+        <ul>
+          <li>Call <code>initialize()</code> right after loading chem-markdown (before the page finishes loading).</li>
+          <li>Rendered elements get <code>data-processed="true"</code>; calling <code>run()</code> repeatedly never renders anything twice, so only newly added elements are rendered.</li>
+          <li>Elements passed via <code>querySelector</code> / <code>nodes</code> are rendered as blocks if they are <code>&lt;pre&gt;</code> or <code>&lt;div&gt;</code>, inline otherwise. With the class <code>pu</code> (or <code>language-pu</code>) they are rendered as units.</li>
+          <li>Input that cannot be rendered is shown as-is with <code>.chem-error</code>. Hovering it shows the error message.</li>
+        </ul>
+
+        <!-- ==================================================== -->
+        <h2 id="style">11. Styling (CSS)</h2>
+        <p>
+          The CSS needed for stacked scripts and arrows is inserted into the page automatically in browsers (<code>&lt;style id="chem-markdown-style-chem"&gt;</code>).
+          Text color is inherited from the surrounding text, so dark mode works as-is. Adjust fonts and sizes with CSS on the following classes.
+        </p>
+        <pre class="code"><code>/* Show formulas in a serif font */
+.chem-formula, .chem-pu { font-family: "Times New Roman", serif; }
+
+/* Center auto-rendered blocks */
+.chem-block { text-align: center; }</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Class</th><th>Element</th></tr></thead>
+            <tbody>
+              <tr><td><code>.chem-formula</code> / <code>.chem-pu</code></td><td>Whole formula or equation / whole unit expression</td></tr>
+              <tr><td><code>.chem-term</code></td><td>A term of an equation (no line breaks inside)</td></tr>
+              <tr><td><code>.chem-sub</code> / <code>.chem-sup</code></td><td>Subscript / superscript</td></tr>
+              <tr><td><code>.chem-ss</code></td><td>Stacked scripts (isotopes, Kröger-Vink notation)</td></tr>
+              <tr><td><code>.chem-coef</code></td><td>Stoichiometric number</td></tr>
+              <tr><td><code>.chem-frac</code></td><td>Fraction (<code>.chem-num</code> numerator, <code>.chem-den</code> denominator)</td></tr>
+              <tr><td><code>.chem-arrow</code></td><td>Reaction arrow (labels: <code>.chem-arrow-above</code>, <code>.chem-arrow-below</code>)</td></tr>
+              <tr><td><code>.chem-op</code> / <code>.chem-rel</code></td><td>Operator / relation (=, ≈ ...)</td></tr>
+              <tr><td><code>.chem-bond</code></td><td>Bond</td></tr>
+              <tr><td><code>.chem-state</code></td><td>State of aggregation</td></tr>
+              <tr><td><code>.chem-i</code> / <code>.chem-b</code></td><td>Italic / bold</td></tr>
+              <tr><td><code>.chem-over</code></td><td><code>\underset</code> / <code>\overset</code></td></tr>
+              <tr><td><code>.chem-error</code></td><td>Input that could not be rendered</td></tr>
+              <tr><td><code>.chem-block</code> / <code>.chem-line</code></td><td>Auto-rendered block / one line in a block</td></tr>
+              <tr><td><code>.chem-inline</code></td><td>Auto-rendered inline element</td></tr>
+              <tr><td><code>.chem-structure</code></td><td><code>&lt;canvas&gt;</code> of a structural formula</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          To write all styles yourself, use <code>initialize({ injectStyles: false })</code>. With another prefix (<code>prefix: 'my'</code>), classes become <code>.my-formula</code> and so on, and the default stylesheet is generated for that prefix.
+        </p>
+
+        <!-- ==================================================== -->
+        <h2 id="outputs">12. Text and LaTeX output</h2>
+        <h3>Rules of the text output</h3>
+        <p>The text output is an approximation within what Unicode characters can express.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Element</th><th>Output</th><th>Example</th></tr></thead>
+            <tbody>
+              <tr><td>Subscripts / superscripts</td><td>Unicode subscript / superscript characters</td><td>H₂O, SO₄²⁻</td></tr>
+              <tr><td>Scripts without Unicode characters</td><td><code>_(...)</code> / <code>^(...)</code></td><td>Li<code>_(Li,x)</code></td></tr>
+              <tr><td>Isotopes</td><td>Superscript and subscript in front</td><td>¹⁴₆C</td></tr>
+              <tr><td>Oxidation states</td><td>Superscript Roman numerals (I and V only)</td><td>Feᴵᴵ</td></tr>
+              <tr><td>Fractions</td><td>Characters such as ½, otherwise <code>1/3</code></td><td>½ O₂</td></tr>
+              <tr><td>Arrow labels</td><td><code>→[above][below]</code></td><td>→[MnO₂][Δ]</td></tr>
+              <tr><td>Equilibrium arrows</td><td>Biased arrows also become ⇌</td><td>A ⇌ B</td></tr>
+              <tr><td>Special bonds</td><td>Similar symbols</td><td>┄, ≂, ≅</td></tr>
+              <tr><td>Color / <code>\underset</code></td><td>Color is ignored; annotations follow in parentheses</td><td>HgI₂ (red)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>LaTeX output</h3>
+        <p>
+          <code>toLatex</code> returns the TeX generated by mhchem itself. It contains commands defined by mhchem such as <code>\tripledash</code>, so displaying it requires MathJax or KaTeX with the mhchem extension.
+        </p>
+
+        <!-- ==================================================== -->
+        <h2 id="limits">13. Limitations</h2>
+        <ul>
+          <li>
+            <strong>TeX inside <code>$...$</code></strong>: the HTML and text output can render:
+            <ul>
+              <li>Greek letters and common symbols (<code>\Delta</code>, <code>\infty</code>, <code>\pm</code>, <code>\times</code>, <code>\cdot</code>, <code>\approx</code>, <code>\le</code>, <code>\ge</code>, arrows ...)</li>
+              <li><code>\frac</code>, <code>\sqrt</code>, <code>^</code>, <code>_</code></li>
+              <li><code>\text</code>, <code>\mathrm</code>, <code>\mathit</code>, <code>\mathbf</code>, <code>\underset</code>, <code>\overset</code>, <code>\underbrace</code>, <code>\left</code>, <code>\right</code>, <code>\color</code></li>
+              <li>Nested <code>\ce</code> and <code>\pu</code></li>
+            </ul>
+            Other commands (matrices, complex math ...) are shown by name with a console warning. To render them exactly, display the output of <code>toLatex</code> with MathJax or KaTeX.
+          </li>
+          <li><strong>Fine details</strong>: the HTML output is laid out with CSS, so positions and spacing do not match MathJax exactly. Compare them side by side with <a href="../examples/mhchem.html">examples/mhchem.html</a>.</li>
+          <li><strong>Text output</strong>: superscripts and subscripts missing from Unicode cannot be expressed, so the result is approximate (see <a href="#outputs">12</a>).</li>
+        </ul>
+
+        <!-- ==================================================== -->
+        <h2 id="faq">14. FAQ</h2>
+        <h3>A <code>-</code> becomes a charge</h3>
+        <p>A trailing <code>-</code> is a charge. Write <code>{-}</code> for a hyphen or <code>\bond{-}</code> for a bond.</p>
+        <h3>An addition turns into a charge</h3>
+        <p>Put spaces around <code>+</code>: <code>A + B</code>, not <code>A+B</code>.</p>
+        <h3>The precipitate / gas arrow does not appear</h3>
+        <p><code>v</code> and <code>^</code> need a space before them: <code>BaSO4 v</code>, <code>H2 ^</code>.</p>
+        <h3>Nothing is rendered automatically</h3>
+        <ul>
+          <li>Check that the class name is <code>chem</code> (<code>pu</code> for units).</li>
+          <li>Elements added later by JavaScript are rendered by calling <code>ChemMarkdown.run()</code>.</li>
+          <li>With <code>initialize({ startOnLoad: false })</code>, nothing is rendered automatically.</li>
+          <li>Only Markdown inline code starting with <code>chem:</code> / <code>pu:</code> is rendered.</li>
+        </ul>
+        <h3>Can it be used together with MathJax?</h3>
+        <p>Yes. chem-markdown does not touch text written as <code>$...$</code> or <code>\ce{...}</code> in the page, so it does not conflict with MathJax.</p>
+        <h3>How do I migrate formulas written for MathJax?</h3>
+        <p>Pass the contents of <code>\ce{...}</code> as-is to <code>&lt;span class="chem"&gt;</code> or <code>toHtml()</code>; they are interpreted the same way.</p>
+
+        <!-- ==================================================== -->
+        <h2 id="license">15. License</h2>
+        <p>
+          chem-markdown is licensed under the MIT License. The bundled mhchemParser (<code>vendor/mhchemParser.js</code>) by Martin Hensel is licensed under the Apache License 2.0 (<code>vendor/mhchemParser.LICENSE.txt</code>).
+        </p>
+      </main>
+    </div>
+
+    <script>
+      document.getElementById("version").textContent = ChemMarkdown.version;
+
+      // Fill example rows: input / rendered HTML / text output
+      for (const tr of document.querySelectorAll("tr[data-ex]")) {
+        const src = tr.dataset.ex;
+        const type = tr.dataset.type || "ce";
+        const placeholder = tr.querySelector("td[colspan]");
+        const make = (cls) => {
+          const td = document.createElement("td");
+          td.className = cls;
+          tr.insertBefore(td, placeholder);
+          return td;
+        };
+        const input = make("input");
+        const code = document.createElement("code");
+        code.textContent = src;
+        input.appendChild(code);
+        const render = make("render");
+        const text = make("text");
+        try {
+          render.innerHTML = ChemMarkdown.toHtml(src, { type });
+          text.textContent = ChemMarkdown.toText(src, { type });
+        } catch (e) {
+          render.textContent = "ERROR: " + e.message;
+        }
+        placeholder.remove();
+      }
+    </script>
+  </body>
+</html>
